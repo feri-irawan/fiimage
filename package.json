@@ -1,11 +1,11 @@
 {
-  "name": "templateforv2-static",
+  "name": "fiimage",
   "version": "1.0.0",
   "description": "",
-  "main": "index.html",
+  "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon index.js",
+    "start": "NODE_ENV=development nodemon index.js",
     "build": "node index.js"
   },
   "repository": {
@@ -22,10 +22,10 @@
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "express": "^4.18.2",
-    "nodemon": "^2.0.20",
     "simple-thumbnail": "^1.6.5"
   },
   "devDependencies": {
+    "nodemon": "^2.0.20",
     "prettier": "^2.8.1"
   }
 }

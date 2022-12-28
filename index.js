@@ -21,6 +21,6 @@ server.get("/", async (req, res) => {
   } catch (error) {}
 });
 
-server.listen(3000);
+if (process.env.NODE_ENV === "development") server.listen(3000);
 
 export default server;
