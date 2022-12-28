@@ -1,6 +1,7 @@
 import express from "express";
 import ffmpegPath from "@ffmpeg-installer/ffmpeg";
 import genThumbnail from "simple-thumbnail";
+import createImage from "./lib/createImage.js";
 
 const server = express();
 
@@ -20,6 +21,8 @@ server.get("/", async (req, res) => {
     });
   } catch (error) {}
 });
+
+server.get("/create", createImage);
 
 if (process.env.NODE_ENV === "development") server.listen(3000);
 
