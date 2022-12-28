@@ -1,0 +1,31 @@
+{
+  "name": "templateforv2-static",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.html",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon index.js",
+    "build": "echo This is a static template, there is no bundler or bundling involved!"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codesandbox-app/static-template.git"
+  },
+  "keywords": [],
+  "author": "Ives van Hoorne",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/codesandbox-app/static-template/issues"
+  },
+  "homepage": "https://github.com/codesandbox-app/static-template#readme",
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "express": "^4.18.2",
+    "nodemon": "^2.0.20",
+    "simple-thumbnail": "^1.6.5"
+  },
+  "devDependencies": {
+    "prettier": "^2.8.1"
+  }
+}
