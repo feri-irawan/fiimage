@@ -1,7 +1,7 @@
 import express from "express";
 import ffmpegPath from "@ffmpeg-installer/ffmpeg";
 import genThumbnail from "simple-thumbnail";
-import createImage from "./lib/createImage.js";
+// import createImage from "./lib/createImage.js";
 
 const server = express();
 
