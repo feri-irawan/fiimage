@@ -22,7 +22,7 @@ server.get("/", async (req, res) => {
   } catch (error) {}
 });
 
-server.get("/create", createImage);
+// server.get("/create", createImage);
 
 if (process.env.NODE_ENV === "development") server.listen(3000);
 
