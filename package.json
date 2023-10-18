@@ -5,7 +5,15 @@
   "main": "index.ts",
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@sparticuz/chromium": "^117.0.0",
+    "axios": "^1.5.1",
+    "cheerio": "^1.0.0-rc.12",
     "express": "^4.18.2",
+    "html-react-parser": "^4.2.5",
+    "puppeteer-core": "^21.3.8",
+    "react": "^18.2.0",
+    "satori": "^0.10.9",
+    "sharp": "^0.32.6",
     "simple-thumbnail": "^1.6.5",
     "zod": "^3.22.4"
   },

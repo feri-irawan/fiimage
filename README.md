@@ -13,7 +13,7 @@ The query strings are:
 
 ### Auto Width
 
-You can use the `?` mark, like this: `s=?xHEIGHT`. This means the width will be auto.
+You can use the `?` mark, like this: `s=?x200`. This means the width will be auto and the height will be `200px`.
 
 Example:
 
