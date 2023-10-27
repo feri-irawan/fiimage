@@ -97,7 +97,7 @@ The query strings are:
 Example:
 
 ```
-https://fiimage.vercel.app?url=http://example.com
+https://fiimage.vercel.app/og?url=https://github.com/feri-irawan/fiimage
 ```
 
 Output:
