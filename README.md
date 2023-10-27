@@ -4,6 +4,10 @@ Resize image and create a thumbnail of a video, made with ❤ by Feri Irawan at 
 
 ## Resize Image
 
+```
+GET /
+```
+
 The query strings are:
 
 | Name           | Description                                        |
@@ -53,7 +57,11 @@ Output:
 
 ![Cat](https://fiimage.vercel.app/?s=300x300&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131)
 
-## Generate Video Thumbanil
+## Generate Video Thumbnail
+
+```
+GET /
+```
 
 The query strings are:
 
@@ -72,3 +80,42 @@ https://fiimage.vercel.app/?s=300x?&t=5&url=http://commondatastorage.googleapis.
 Output:
 
 ![Big Buck Bunny](https://fiimage.vercel.app/?s=300x?&t=5&url=http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4)
+
+## Create a Open Graph Image (og:image)
+
+```
+GET /og
+```
+
+The query strings are:
+
+| Name                  | Description                                                            |
+| --------------------- | ---------------------------------------------------------------------- |
+| `url`                 | The your web URL (must be start with `https://` or `http://` protocol) |
+| `template` (optional) | The template (for now you can choose `0` or `1`), default: `0`         |
+
+Example:
+
+```
+https://fiimage.vercel.app?url=http://example.com
+```
+
+Output:
+
+![Open Graph Image](https://fiimage.vercel.app/og?url=https://github.com/feri-irawan/fiimage)
+
+Using template: `1`
+
+![Open Graph Image](https://fiimage.vercel.app/og?template=1&url=https://github.com/feri-irawan/fiimage)
+
+> Stay tuned for the new template :)
+
+## Contribution
+
+If you wish to contribute to this project, please create a pull request and follow the contribution guidelines.
+
+## License
+
+This project is licensed under the MIT license.
+
+Thank you, and hope it proves useful. Feel free to report issues or provide suggestions.
