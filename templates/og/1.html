@@ -1,0 +1,122 @@
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap");
+
+  * {
+    font-family: "Inter", sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    color: #333;
+  }
+
+  .canvas {
+    width: 600px;
+    height: 315px;
+    overflow: hidden;
+    display: flex;
+    padding: 1rem;
+    background: #fff;
+  }
+
+  .container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    flex: 1;
+    position: relative;
+  }
+
+  .header {
+    display: flex;
+    gap: 1rem;
+    position: absolute;
+    top: 1rem;
+    left: 0rem;
+    right: 0rem;
+  }
+  .header #title {
+    flex: 1;
+  }
+  .header #icon {
+    width: 5rem;
+    height: 5rem;
+    object-fit: cover;
+  }
+
+  #title,
+  #description {
+    overflow: hidden;
+    display: block;
+  }
+
+  #title {
+    line-clamp: 3;
+    font-size: 1.5rem;
+  }
+
+  #description {
+    line-clamp: 4;
+  }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: absolute;
+    bottom: 0.5rem;
+    left: 1rem;
+    right: 1rem;
+  }
+
+  .url {
+    max-width: 90%;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .url p {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    width: 100%;
+  }
+</style>
+
+<body>
+  <div class="canvas">
+    <div class="container">
+      <div class="header">
+        <h1 id="title">
+          Lorem ipsum dolor sit, amet consectetur adipisicing elit. Tempore
+          repellat laborum, consequuntur fugit aperiam labore nobis tenetur,
+          repudiandae ad ratione maxime, vero iste beatae voluptates blanditiis!
+          Minima fugit totam ducimus.
+        </h1>
+        <img id="icon" src="https://dummyimage.com/150x150/000/fff" />
+      </div>
+
+      <div class="body">
+        <div id="description">
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Earum
+          doloremque accusantium odio. Odio, iure omnis soluta natus facere quia
+          commodi dignissimos nesciunt! Consequatur, molestias quod cum
+          doloremque non nulla odit.
+        </div>
+
+        <div class="url">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="24"
+            height="22"
+          >
+            <path
+              d="M13.0605 8.11073L14.4747 9.52494C17.2084 12.2586 17.2084 16.6908 14.4747 19.4244L14.1211 19.778C11.3875 22.5117 6.95531 22.5117 4.22164 19.778C1.48797 17.0443 1.48797 12.6122 4.22164 9.87849L5.63585 11.2927C3.68323 13.2453 3.68323 16.4112 5.63585 18.3638C7.58847 20.3164 10.7543 20.3164 12.7069 18.3638L13.0605 18.0102C15.0131 16.0576 15.0131 12.8918 13.0605 10.9392L11.6463 9.52494L13.0605 8.11073ZM19.778 14.1211L18.3638 12.7069C20.3164 10.7543 20.3164 7.58847 18.3638 5.63585C16.4112 3.68323 13.2453 3.68323 11.2927 5.63585L10.9392 5.98941C8.98653 7.94203 8.98653 11.1079 10.9392 13.0605L12.3534 14.4747L10.9392 15.8889L9.52494 14.4747C6.79127 11.741 6.79127 7.30886 9.52494 4.57519L9.87849 4.22164C12.6122 1.48797 17.0443 1.48797 19.778 4.22164C22.5117 6.95531 22.5117 11.3875 19.778 14.1211Z"
+            ></path>
+          </svg>
+          <p id="url">https://fiimage.vercel.app</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>

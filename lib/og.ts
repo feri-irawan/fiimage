@@ -3,14 +3,15 @@
  */
 
 import axios from "axios";
-import * as cheerio from "cheerio";
+import cheerio from "cheerio";
 import { Request, Response } from "express";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import satori from "satori";
-import sharp from "sharp";
 import parse from "html-react-parser";
 import { z } from "zod";
+import inlineCss from "inline-css";
+import { Resvg } from "@resvg/resvg-js";
 
 /**
  * Route handler `/og`
@@ -21,7 +22,7 @@ export const createOGImage = async (req: Request, res: Response) => {
   try {
     const query = querySchema.parse(req.query);
     const metadata = await getPageMetadata(query.url);
-    const template = useTheTemplate(metadata, query.template);
+    const template = await useTheTemplate(metadata, query.template);
     const htmlObject = parse(template);
     const svg = await createSVGFromHTMLObject(htmlObject);
     const png = await createPNGFromSVG(svg);
@@ -42,15 +43,17 @@ export const createOGImage = async (req: Request, res: Response) => {
 /**
  * Query string Validation
  */
+const templateSchema = z.enum(["0", "1"]).default("0");
 const querySchema = z.object({
   url: z.string().url(),
-  template: z.enum(["default"]).default("default"),
+  template: templateSchema,
 });
 
 type TMetadata = {
   title: string;
-  description: string;
-  url: string;
+  description?: string;
+  url?: string;
+  icon?: string;
 };
 
 /**
@@ -62,11 +65,30 @@ const getPageMetadata = async (url: string): Promise<TMetadata> => {
   const html = await axios.get(url).then(({ data }) => data);
   const $ = cheerio.load(html);
 
+  const icon = createValidIconUrl(url, $("link[rel=icon]").attr("href") || "");
+
   return {
-    title: $("title").text(),
-    description: $("meta[name=description]").attr("content") || "",
+    title: $("title").first().text(),
+    description: $("meta[name=description]").attr("content"),
+    icon,
     url,
   };
+};
+
+/** Create a valid icon URL */
+const createValidIconUrl = (url: string, icon: string) => {
+  if (!icon) return;
+
+  const host = new URL(url);
+
+  const baseUrl = `${host.protocol}//${host.hostname}`;
+  const isRealtiveIconUrl = icon?.startsWith("/");
+  const iconWithBaseUrl = isRealtiveIconUrl ? `${baseUrl}${icon}` : icon;
+  const isIcoFile = icon?.endsWith(".ico");
+
+  return isIcoFile
+    ? `https://fiimage.vercel.app?url=${iconWithBaseUrl}`
+    : iconWithBaseUrl;
 };
 
 /**
@@ -75,23 +97,27 @@ const getPageMetadata = async (url: string): Promise<TMetadata> => {
  * @param template
  * @returns HTML string
  */
-const useTheTemplate = (
+const useTheTemplate = async (
   metadata: TMetadata,
-  template: "default" = "default"
+  template: z.infer<typeof templateSchema> = "0"
 ) => {
-  // Load the template
-  const $ = cheerio.load(
-    readFileSync(resolve(`templates/og/${template}.html`)),
-    null,
-    false
+  // Valid HTML
+  const html = await inlineCss(
+    readFileSync(resolve(`templates/og/${template}.html`), "utf-8"),
+    { url: "/" }
   );
 
-  $("style").remove();
+  // Load the template
+  // @ts-ignore
+  const $ = cheerio.load(html, null, false);
 
   // Populate meta data to HTML
   $("#title").text(metadata.title);
-  $("#description").text(metadata.description);
-  $("#url").text(metadata.url);
+  $("#description").text(metadata.description || "");
+  $("#url").text(metadata.url || "");
+
+  if (!metadata.icon) $("#icon").remove();
+  else $("#icon").attr("src", metadata.icon);
 
   return $.html().trim();
 };
@@ -118,16 +144,12 @@ const createSVGFromHTMLObject = async (htmlObject: any) => {
         weight: 700,
         style: "normal",
       },
-      {
-        name: "Bangers",
-        data: readFileSync(resolve("fonts/bangers.ttf")),
-        weight: 400,
-        style: "normal",
-      },
     ],
   });
 };
 
 const createPNGFromSVG = async (svg: string) => {
-  return await sharp(Buffer.from(svg)).png().toBuffer();
+  return new Resvg(svg, { fitTo: { mode: "width", value: 1200 } })
+    .render()
+    .asPng();
 };

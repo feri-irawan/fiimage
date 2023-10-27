@@ -3,22 +3,27 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",
+  "scripts": {
+    "dev": "vercel dev"
+  },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@resvg/resvg-js": "^2.6.0",
     "@sparticuz/chromium": "^117.0.0",
     "axios": "^1.5.1",
     "cheerio": "^1.0.0-rc.12",
     "express": "^4.18.2",
     "html-react-parser": "^4.2.5",
+    "inline-css": "^4.0.2",
     "puppeteer-core": "^21.3.8",
     "react": "^18.2.0",
     "satori": "^0.10.9",
-    "sharp": "^0.32.6",
     "simple-thumbnail": "^1.6.5",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/express": "^4.17.19",
+    "@types/inline-css": "^3.0.2",
     "@types/node": "^20.8.6",
     "typescript": "^5.2.2"
   }
