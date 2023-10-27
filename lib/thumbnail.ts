@@ -24,6 +24,8 @@ export const generateThumbnail = async (req: Request, res: Response) => {
   try {
     const { url, s, t } = querySchema.parse(req.query);
 
+    res.setHeader("Content-Type", "image/jpeg");
+
     await genThumbnail(url, res, s, {
       path: ffmpegPath.path,
       seek: t,
