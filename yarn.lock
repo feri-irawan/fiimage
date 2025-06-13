@@ -160,13 +160,13 @@
     fflate "^0.7.3"
     string.prototype.codepointat "^0.2.1"
 
-"@sparticuz/chromium@^117.0.0":
-  version "117.0.0"
-  resolved "https://registry.npmjs.org/@sparticuz/chromium/-/chromium-117.0.0.tgz"
-  integrity sha512-MXvxLgGt7e1bjOu6AwpemRnhrF+wxLxsHpkiOuJOLsfHAtT0VNlsnhAULQZ7hNXGhr37cTM2sCifUHwgrVH+sA==
+"@sparticuz/chromium@^133.0.0":
+  version "133.0.0"
+  resolved "https://registry.yarnpkg.com/@sparticuz/chromium/-/chromium-133.0.0.tgz#515bb917d470828c0ffa5644eced95830f9ce83c"
+  integrity sha512-wioNxMtSxRI+Y6ymc/UFPX9lY7A1SDgBezjFITH6arwe5CONfWosNDGpgflUGYajxxGktb1k3kjJ83jWzbccBw==
   dependencies:
-    follow-redirects "^1.15.2"
-    tar-fs "^3.0.4"
+    follow-redirects "^1.15.9"
+    tar-fs "^3.0.8"
 
 "@tootallnate/quickjs-emscripten@^0.23.0":
   version "0.23.0"
@@ -871,12 +871,7 @@ flat-util@^1.1.9:
   resolved "https://registry.yarnpkg.com/flat-util/-/flat-util-1.1.11.tgz#4ec1e957f8ff589ff26701c45379b18d5f8e4a0a"
   integrity sha512-h9ho3lHr5hDTQZKLqFDqIliDV/A8yCyP7UoSIBT4U3d7VfA/EeqsC8cxWJGIr5oCxZzMD/3BEx3SLYFX6hD8ng==
 
-follow-redirects@^1.15.2:
-  version "1.15.3"
-  resolved "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.15.3.tgz"
-  integrity sha512-1VzOtuEM8pC9SFU1E+8KfTjZyMztRsgEfwQl44z8A25uy13jSzTj6dyK2Df52iV0vgHCfBwLhDWevLn95w5v6Q==
-
-follow-redirects@^1.15.6:
+follow-redirects@^1.15.6, follow-redirects@^1.15.9:
   version "1.15.9"
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.9.tgz#a604fa10e443bf98ca94228d9eebcc2e8a2c8ee1"
   integrity sha512-gew4GsXizNgdoRyqmyfMHyAmXsZDk6mHkSxZFCzW9gwlbtOW44CDtYavM+y+72qD/Vq2l550kMF52DT8fOLJqQ==
@@ -1192,11 +1187,6 @@ mitt@^3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/mitt/-/mitt-3.0.1.tgz#ea36cf0cc30403601ae074c8f77b7092cdab36d1"
   integrity sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==
-
-mkdirp-classic@^0.5.2:
-  version "0.5.3"
-  resolved "https://registry.yarnpkg.com/mkdirp-classic/-/mkdirp-classic-0.5.3.tgz#fa10c9115cc6d8865be221ba47ee9bed78601113"
-  integrity sha512-gKLcREMhtuZRwRAfqP3RFW+TK4JqApVBtOIftVgjuABpAtpxhPGaDcfvbhNvD0B8iD1oUr/txX35NjcaY6Ns/A==
 
 ms@^2.1.3:
   version "2.1.3"
@@ -1667,15 +1657,6 @@ style-to-object@1.0.3:
   integrity sha512-xOpx7S53E0V3DpVsvt7ySvoiumRpfXiC99PUXLqGB3wiAnN9ybEIpuzlZ8LAZg+h1sl9JkEUwtSQXxcCgFqbbg==
   dependencies:
     inline-style-parser "0.2.2"
-
-tar-fs@^3.0.4:
-  version "3.0.4"
-  resolved "https://registry.npmjs.org/tar-fs/-/tar-fs-3.0.4.tgz"
-  integrity sha512-5AFQU8b9qLfZCX9zp2duONhPmZv0hGYiBPJsyUdqMjzq/mqVpy/rEUSeHk1+YitmxugaptgBh5oDGU3VsAJq4w==
-  dependencies:
-    mkdirp-classic "^0.5.2"
-    pump "^3.0.0"
-    tar-stream "^3.1.5"
 
 tar-fs@^3.0.8:
   version "3.0.9"
