@@ -24,7 +24,7 @@
   "devDependencies": {
     "@types/express": "^4.17.19",
     "@types/inline-css": "^3.0.2",
-    "@types/node": "^20.8.6",
+    "@types/node": "^22.0.0",
     "typescript": "^5.2.2"
   }
 }
