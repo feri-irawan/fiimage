@@ -1802,9 +1802,9 @@ type-is@~1.6.18:
     mime-types "~2.1.24"
 
 typescript@^5.2.2:
-  version "5.2.2"
-  resolved "https://registry.npmjs.org/typescript/-/typescript-5.2.2.tgz"
-  integrity sha512-mI4WrpHsbCIcwT9cF4FZvr80QUeKvsUsUvKDoR+X/7XHQH98xYD8YHZg7ANtz2GtZt/CBq2QJ0thkGJMHfqc1w==
+  version "5.8.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.8.3.tgz#92f8a3e5e3cf497356f4178c34cd65a7f5e8440e"
+  integrity sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ==
 
 unbzip2-stream@1.4.3:
   version "1.4.3"
