@@ -160,13 +160,13 @@
     fflate "^0.7.3"
     string.prototype.codepointat "^0.2.1"
 
-"@sparticuz/chromium@^133.0.0":
-  version "133.0.0"
-  resolved "https://registry.yarnpkg.com/@sparticuz/chromium/-/chromium-133.0.0.tgz#515bb917d470828c0ffa5644eced95830f9ce83c"
-  integrity sha512-wioNxMtSxRI+Y6ymc/UFPX9lY7A1SDgBezjFITH6arwe5CONfWosNDGpgflUGYajxxGktb1k3kjJ83jWzbccBw==
+"@sparticuz/chromium@^137.0.0":
+  version "137.0.1"
+  resolved "https://registry.yarnpkg.com/@sparticuz/chromium/-/chromium-137.0.1.tgz#7576d271da6e172505af89285a2e69149bcb8f88"
+  integrity sha512-9ixW23xjzIgSwBPLhWFOnrJNsnEw4dQWZqGzBCFGwGVuBPkNiJHO5VAGKezXj81J0wMYwP04tLlJFjsN5z4ROw==
   dependencies:
     follow-redirects "^1.15.9"
-    tar-fs "^3.0.8"
+    tar-fs "^3.0.9"
 
 "@tootallnate/quickjs-emscripten@^0.23.0":
   version "0.23.0"
@@ -1654,7 +1654,7 @@ style-to-object@1.0.8:
   dependencies:
     inline-style-parser "0.2.4"
 
-tar-fs@^3.0.8:
+tar-fs@^3.0.8, tar-fs@^3.0.9:
   version "3.0.9"
   resolved "https://registry.yarnpkg.com/tar-fs/-/tar-fs-3.0.9.tgz#d570793c6370d7078926c41fa422891566a0b617"
   integrity sha512-XF4w9Xp+ZQgifKakjZYmFdkLoSWd34VGKcsTCwlNWM7QG3ZbaxnTsaBwnjFZqHRf/rROxaR8rXnbtwdvaDI+lA==
