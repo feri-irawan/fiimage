@@ -19,7 +19,7 @@
     "react": "^19.0.0",
     "satori": "^0.15.0",
     "simple-thumbnail": "^1.6.5",
-    "zod": "^3.22.4"
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
