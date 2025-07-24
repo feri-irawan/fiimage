@@ -1442,10 +1442,10 @@ safe-buffer@5.2.1, safe-buffer@~5.2.0:
   resolved "https://registry.npmjs.org/safer-buffer/-/safer-buffer-2.1.2.tgz"
   integrity sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==
 
-satori@^0.15.0:
-  version "0.15.2"
-  resolved "https://registry.yarnpkg.com/satori/-/satori-0.15.2.tgz#99b497d35e7e3093645a5a08a1935573b7120420"
-  integrity sha512-vu/49vdc8MzV5jUchs3TIRDCOkOvMc1iJ11MrZvhg9tE4ziKIEIBjBZvies6a9sfM2vQ2gc3dXeu6rCK7AztHA==
+satori@^0.16.0:
+  version "0.16.1"
+  resolved "https://registry.yarnpkg.com/satori/-/satori-0.16.1.tgz#481c38501b87bd19166d5a67450661d2c2c748dd"
+  integrity sha512-JM4bFaca8HMA11Xyfgrclv9qIPnd9uhUDr2oYrVlzqTrV7EA/VEeq/7hwe8r0eQP4JwNVW70JBtLRk0v48BTXg==
   dependencies:
     "@shuding/opentype.js" "1.4.0-beta.0"
     css-background-parser "^0.1.0"
@@ -1457,7 +1457,7 @@ satori@^0.15.0:
     linebreak "^1.1.0"
     parse-css-color "^0.2.1"
     postcss-value-parser "^4.2.0"
-    yoga-wasm-web "^0.3.3"
+    yoga-layout "^3.2.1"
 
 semver@^7.7.2:
   version "7.7.2"
@@ -1838,10 +1838,10 @@ yauzl@^2.10.0:
     buffer-crc32 "~0.2.3"
     fd-slicer "~1.1.0"
 
-yoga-wasm-web@^0.3.3:
-  version "0.3.3"
-  resolved "https://registry.yarnpkg.com/yoga-wasm-web/-/yoga-wasm-web-0.3.3.tgz#eb8e9fcb18e5e651994732f19a220cb885d932ba"
-  integrity sha512-N+d4UJSJbt/R3wqY7Coqs5pcV0aUj2j9IaQ3rNj9bVCLld8tTGKRa2USARjnvZJWVx1NDmQev8EknoczaOQDOA==
+yoga-layout@^3.2.1:
+  version "3.2.1"
+  resolved "https://registry.yarnpkg.com/yoga-layout/-/yoga-layout-3.2.1.tgz#d2d1ba06f0e81c2eb650c3e5ad8b0b4adde1e843"
+  integrity sha512-0LPOt3AxKqMdFBZA3HBAt/t/8vIKq7VaQYbuA8WxCgung+p9TVyKRYdpvCb80HcdTN2NkbIKbhNwKUfm3tQywQ==
 
 zod@^3.22.4, zod@^3.24.1:
   version "3.25.76"

@@ -17,7 +17,7 @@
     "inline-css": "^4.0.2",
     "puppeteer-core": "^24.0.0",
     "react": "^19.0.0",
-    "satori": "^0.15.0",
+    "satori": "^0.16.0",
     "simple-thumbnail": "^1.6.5",
     "zod": "^3.22.4"
   },
