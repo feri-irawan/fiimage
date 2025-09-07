@@ -761,7 +761,7 @@ escalade@^3.1.1:
 
 escape-html@^1.0.3:
   version "1.0.3"
-  resolved "https://registry.npmjs.org/escape-html/-/escape-html-1.0.3.tgz"
+  resolved "https://registry.yarnpkg.com/escape-html/-/escape-html-1.0.3.tgz#0258eae4d3d0c0974de1c169188ef0051d1d1988"
   integrity sha512-NiSupZ4OeuGwr68lGIeym/ksIZMJodUGOSCZ/FSnTxcrekbvqrgdUxlJOMpijaKZVjAJrWrGs/6Jy8OMuyj9ow==
 
 escodegen@^2.1.0:
@@ -1443,9 +1443,9 @@ safe-buffer@5.2.1, safe-buffer@~5.2.0:
   integrity sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==
 
 satori@^0.18.0:
-  version "0.18.0"
-  resolved "https://registry.yarnpkg.com/satori/-/satori-0.18.0.tgz#fcf77dc9458698843961780379abbc259f628f27"
-  integrity sha512-EZvcxnJJIxiUWfnGeGwVcz+OO9c+zxJDgjb4AHmOhCwpRn1dH088EzcPu1K/yjDAAmpOqFbpvnPVGarGfGp8zg==
+  version "0.18.2"
+  resolved "https://registry.yarnpkg.com/satori/-/satori-0.18.2.tgz#e02abb4a76bc976961df55ddb451cea28fc23d13"
+  integrity sha512-Y9fOzHuaslMX+3otoULyvUBOxXN6a0CJL+MPeFrHgGSPDwdSxkZdhY9W8U4MvDm0aT/+EIr5g18dvAQV+UplDA==
   dependencies:
     "@shuding/opentype.js" "1.4.0-beta.0"
     css-background-parser "^0.1.0"
