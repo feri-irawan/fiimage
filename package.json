@@ -9,7 +9,7 @@
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@resvg/resvg-js": "^2.6.0",
-    "@sparticuz/chromium": "^137.0.0",
+    "@sparticuz/chromium": "^140.0.0",
     "axios": "^1.5.1",
     "cheerio": "^1.0.0-rc.12",
     "express": "^5.0.0",
