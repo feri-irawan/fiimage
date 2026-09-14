@@ -52,15 +52,16 @@ export const generateVideoThumbnail = async (
     throw new PayloadTooLargeError("Remote media is too large.");
   }
 
+  const inputPath = `/tmp/fiimage-${crypto.randomUUID()}.media`;
   const args = [
     "-hide_banner",
     "-loglevel",
     "error",
     "-y",
     "-protocol_whitelist",
-    "pipe",
+    "file,pipe",
     "-i",
-    "pipe:0",
+    inputPath,
     ...(seek === undefined ? [] : ["-ss", String(seek)]),
     "-frames:v",
     "1",
@@ -73,7 +74,6 @@ export const generateVideoThumbnail = async (
     "pipe:1",
   ];
 
-  const inputPath = `/tmp/fiimage-${crypto.randomUUID()}.media`;
   try {
     await writeResponseBodyToFile(
       response,
@@ -84,7 +84,6 @@ export const generateVideoThumbnail = async (
     const processTimeout = Math.max(1, deadlineAt - Date.now());
     const process = Bun.spawn({
       cmd: [ffmpegPath, ...args],
-      stdin: Bun.file(inputPath),
       stdout: "pipe",
       stderr: "pipe",
       timeout: processTimeout,
