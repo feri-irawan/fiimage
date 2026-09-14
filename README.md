@@ -22,7 +22,7 @@ You can use the `?` mark, like this: `s=?x200`. This means the width will be aut
 Example:
 
 ```
-https://fiimage.vercel.app?s=?x200&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
+https://fiimage.vercel.app/?s=?x200&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
 ```
 
 Output:
@@ -36,7 +36,7 @@ Similar to [auto width](#auto-width), you can also use the `?` mark, like this: 
 Example:
 
 ```
-https://fiimage.vercel.app?s=200x?&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
+https://fiimage.vercel.app/?s=200x?&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
 ```
 
 Output:
@@ -50,12 +50,12 @@ You can use `s=300x200`, that means the width will be `300px` and height will be
 Example:
 
 ```
-https://fiimage.vercel.app?s=300x200&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
+https://fiimage.vercel.app/?s=300x200&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
 ```
 
 Output:
 
-![Cat](https://fiimage.vercel.app/?s=300x300&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131)
+![Cat](https://fiimage.vercel.app/?s=300x200&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131)
 
 ## Generate Video Thumbnail
 
@@ -74,12 +74,12 @@ The query strings are:
 Example:
 
 ```
-https://fiimage.vercel.app/?s=300x?&t=5&url=http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
+https://fiimage.vercel.app/?s=300x?&t=5&url=https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4
 ```
 
 Output:
 
-![Big Buck Bunny](https://fiimage.vercel.app/?s=300x?&t=5&url=http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4)
+![For Bigger Blazes](https://fiimage.vercel.app/?s=300x?&t=5&url=https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4)
 
 ## Create a Open Graph Image (og:image)
 
