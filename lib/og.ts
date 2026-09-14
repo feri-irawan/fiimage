@@ -6,14 +6,14 @@ import { load } from "cheerio";
 import { Request, Response } from "express";
 import { readFileSync } from "fs";
 import { resolve } from "path";
+// Satori loads fflate from its CJS build at runtime. Load it first so
+// Vercel's Bun function trace includes the package before Satori initializes.
+import "fflate";
 import satori from "satori";
 import parse from "html-react-parser";
 import { z } from "zod";
 import inlineCss from "inline-css";
 import { Resvg } from "@resvg/resvg-js";
-// Satori loads fflate from its CJS build at runtime. Keep this explicit so
-// Vercel's Bun function trace includes the package in the OG bundle.
-import "fflate";
 import { sendGeneratedImage } from "./response";
 import { fetchSafeResponse, readResponseBody } from "./remote";
 import { UnsafeHttpUrlError } from "./security";
