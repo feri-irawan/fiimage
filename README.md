@@ -74,12 +74,12 @@ The query strings are:
 Example:
 
 ```
-https://fiimage.vercel.app/?s=300x?&t=5&url=https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4
+https://fiimage.vercel.app/?s=300x?&t=5&url=https://www.w3schools.com/tags/mov_bbb.mp4
 ```
 
 Output:
 
-![For Bigger Blazes](https://fiimage.vercel.app/?s=300x?&t=5&url=https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4)
+![Big Buck Bunny](https://fiimage.vercel.app/?s=300x?&t=5&url=https://www.w3schools.com/tags/mov_bbb.mp4)
 
 ## Create a Open Graph Image (og:image)
 
