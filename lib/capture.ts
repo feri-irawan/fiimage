@@ -87,8 +87,13 @@ const captureTheWeb = async ({ url, s }: z.infer<typeof querySchema>) => {
     Math.max(1, deadlineAt - Date.now()),
     "Chromium preparation timed out."
   );
+  const args = await withTimeout(
+    puppeteer.defaultArgs({ args: Chromium.args, headless: "shell" }),
+    remainingTime(deadlineAt),
+    "Browser argument preparation timed out."
+  );
   const launchPromise = puppeteer.launch({
-    args: puppeteer.defaultArgs({ args: Chromium.args, headless: "shell" }),
+    args,
     executablePath,
     headless: "shell",
   });
@@ -232,8 +237,12 @@ const captureTheWeb = async ({ url, s }: z.infer<typeof querySchema>) => {
 
     await withTimeout(
       Promise.race([
-        page.evaluate(async () => {
-          await Promise.all(
+        // Keep this callback synchronous. TypeScript downlevels async
+        // callbacks for the server bundle, but Puppeteer serializes the
+        // callback and runs it in the page where the generated __awaiter
+        // helper does not exist.
+        page.evaluate(() => {
+          const imagesReady = Promise.all(
             Array.from(document.images, (image) => {
               if (image.complete) return Promise.resolve();
               return new Promise<void>((resolve) => {
@@ -242,7 +251,8 @@ const captureTheWeb = async ({ url, s }: z.infer<typeof querySchema>) => {
               });
             })
           );
-          await document.fonts?.ready;
+
+          return imagesReady.then(() => document.fonts?.ready);
         }),
         new Promise<void>((resolve) =>
           setTimeout(
