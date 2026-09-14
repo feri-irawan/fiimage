@@ -3,25 +3,27 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",
+  "packageManager": "bun@1.4.2",
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "bunx --bun vercel@59.10.0 dev",
+    "test": "bun test",
+    "typecheck": "tsc --project tsconfig.typecheck.json --noEmit"
   },
   "dependencies": {
-    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@resvg/resvg-js": "^2.6.0",
-    "@sparticuz/chromium": "^137.0.0",
-    "axios": "^1.5.1",
+    "@sparticuz/chromium": "137.0.1",
     "cheerio": "^1.0.0-rc.12",
     "express": "^5.0.0",
+    "ffmpeg-static": "5.3.0",
     "html-react-parser": "^5.0.0",
     "inline-css": "^4.0.2",
     "puppeteer-core": "^24.0.0",
     "react": "^19.0.0",
     "satori": "^0.33.0",
-    "simple-thumbnail": "^1.6.5",
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@types/bun": "1.4.2",
     "@types/express": "^5.0.0",
     "@types/inline-css": "^3.0.2",
     "@types/node": "^24.0.0",
