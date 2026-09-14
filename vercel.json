@@ -12,7 +12,7 @@
       "maxDuration": 60
     },
     "api/og.ts": {
-      "includeFiles": "{fonts/**/*.otf,templates/og/*.html,node_modules/fflate/**}",
+      "includeFiles": "{fonts/**/*.otf,templates/og/*.html,node_modules/fflate/**,node_modules/satori/node_modules/fflate/**,node_modules/harfbuzzjs/*.wasm}",
       "maxDuration": 60
     }
   },
