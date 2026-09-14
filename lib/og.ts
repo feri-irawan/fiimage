@@ -6,10 +6,6 @@ import { load } from "cheerio";
 import { Request, Response } from "express";
 import { readFileSync } from "fs";
 import { resolve } from "path";
-// Satori loads fflate from its CJS build at runtime. Load it first so
-// Vercel's Bun function trace includes the package before Satori initializes.
-import "fflate";
-import satori from "satori";
 import parse from "html-react-parser";
 import { z } from "zod";
 import inlineCss from "inline-css";
@@ -101,6 +97,12 @@ const fonts = [
     style: "normal" as const,
   },
 ];
+
+/** Load Satori after its CJS compression dependency is available. */
+const loadSatori = async () => {
+  await import("fflate");
+  return (await import("satori")).default;
+};
 
 type TMetadata = {
   title: string;
@@ -266,6 +268,7 @@ const useTheTemplate = async (
  * @returns SVG string
  */
 const createSVGFromHTMLObject = async (htmlObject: any) => {
+  const satori = await loadSatori();
   return await satori(htmlObject, {
     width: 600,
     height: 315,
