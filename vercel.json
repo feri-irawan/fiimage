@@ -1,14 +1,24 @@
 {
-  "builds": [
-    {
-      "src": "index.ts",
-      "use": "@vercel/node"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "bunVersion": "1.x",
+  "installCommand": "bun install --frozen-lockfile",
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "node_modules/ffmpeg-static/ffmpeg",
+      "maxDuration": 60
+    },
+    "api/capture.ts": {
+      "includeFiles": "node_modules/@sparticuz/chromium/bin/**",
+      "maxDuration": 60
+    },
+    "api/og.ts": {
+      "includeFiles": "{fonts/**/*.otf,templates/og/*.html}",
+      "maxDuration": 60
     }
-  ],
+  },
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "index.ts"
-    }
+    { "src": "/capture(?:/)?", "dest": "/api/capture.ts" },
+    { "src": "/og(?:/)?", "dest": "/api/og.ts" },
+    { "src": "/(.*)", "dest": "/api/index.ts" }
   ]
 }
