@@ -45,17 +45,17 @@ Output:
 
 ### Force width and height
 
-You can use `s=300x200`, that means the width will be `300px` and height will be `200px`.
+You can use `s=300x300`, that means the width will be `300px` and height will be `300px`.
 
 Example:
 
 ```
-https://fiimage.vercel.app/?s=300x200&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
+https://fiimage.vercel.app/?s=300x300&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
 ```
 
 Output:
 
-![Cat](https://fiimage.vercel.app/?s=300x200&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131)
+![Cat](https://fiimage.vercel.app/?s=300x300&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131)
 
 ## Generate Video Thumbnail
 
