@@ -3,28 +3,31 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",
+  "packageManager": "bun@1.4.2",
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "bun x --bun vercel@59.16.0 dev",
+    "test": "bun test",
+    "typecheck": "tsc --project tsconfig.typecheck.json --noEmit"
   },
   "dependencies": {
-    "@ffmpeg-installer/ffmpeg": "^1.1.0",
-    "@resvg/resvg-js": "^2.6.0",
-    "@sparticuz/chromium": "^137.0.0",
-    "axios": "^1.5.1",
-    "cheerio": "^1.0.0-rc.12",
-    "express": "^5.0.0",
-    "html-react-parser": "^5.0.0",
-    "inline-css": "^4.0.2",
-    "puppeteer-core": "^24.0.0",
-    "react": "^19.0.0",
-    "satori": "^0.33.0",
-    "simple-thumbnail": "^1.6.5",
-    "zod": "^4.0.0"
+    "@resvg/resvg-js": "^2.6.2",
+    "@sparticuz/chromium": "^153.0.0",
+    "cheerio": "^1.2.0",
+    "express": "^5.2.1",
+    "fflate": "0.7.3",
+    "ffmpeg-static": "5.3.0",
+    "html-react-parser": "^6.1.7",
+    "inline-css": "^4.0.3",
+    "puppeteer-core": "^25.10.0",
+    "react": "^19.3.0",
+    "satori": "^0.33.4",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0",
-    "@types/inline-css": "^3.0.2",
-    "@types/node": "^24.0.0",
-    "typescript": "^7.0.0"
+    "@types/bun": "1.4.2",
+    "@types/express": "^5.0.6",
+    "@types/inline-css": "^3.0.4",
+    "@types/node": "^26.5.1",
+    "typescript": "^7.0.2"
   }
 }

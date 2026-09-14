@@ -1,6 +1,6 @@
 # fiimage
 
-Resize image and create a thumbnail of a video, made with ❤ by Feri Irawan at 28/12/2022
+Resize images, create video thumbnails, capture web pages, and generate Open Graph images, made with ❤ by Feri Irawan at 28/12/2022
 
 ## Resize Image
 
@@ -22,7 +22,7 @@ You can use the `?` mark, like this: `s=?x200`. This means the width will be aut
 Example:
 
 ```
-https://fiimage.vercel.app?s=?x200&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
+https://fiimage.vercel.app/?s=?x200&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
 ```
 
 Output:
@@ -36,7 +36,7 @@ Similar to [auto width](#auto-width), you can also use the `?` mark, like this: 
 Example:
 
 ```
-https://fiimage.vercel.app?s=200x?&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
+https://fiimage.vercel.app/?s=200x?&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
 ```
 
 Output:
@@ -50,12 +50,12 @@ You can use `s=300x200`, that means the width will be `300px` and height will be
 Example:
 
 ```
-https://fiimage.vercel.app?s=300x200&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
+https://fiimage.vercel.app/?s=300x200&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
 ```
 
 Output:
 
-![Cat](https://fiimage.vercel.app/?s=300x300&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131)
+![Cat](https://fiimage.vercel.app/?s=300x200&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131)
 
 ## Generate Video Thumbnail
 
@@ -74,14 +74,39 @@ The query strings are:
 Example:
 
 ```
-https://fiimage.vercel.app/?s=300x?&t=5&url=http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
+https://fiimage.vercel.app/?s=300x?&t=5&url=https://www.w3schools.com/tags/mov_bbb.mp4
 ```
 
 Output:
 
-![Big Buck Bunny](https://fiimage.vercel.app/?s=300x?&t=5&url=http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4)
+![Big Buck Bunny](https://fiimage.vercel.app/?s=300x?&t=5&url=https://www.w3schools.com/tags/mov_bbb.mp4)
 
-## Create a Open Graph Image (og:image)
+## Capture a Web Page
+
+```
+GET /capture
+```
+
+Capture a public web page as a PNG image. The `s` parameter controls the browser viewport size and defaults to `640x480`.
+
+The query strings are:
+
+| Name           | Description                                      |
+| -------------- | ------------------------------------------------ |
+| `url`          | The web page URL                                 |
+| `s` (optional) | The viewport size, for example `s=1280x720`      |
+
+Example:
+
+```
+https://fiimage.vercel.app/capture?s=1280x720&url=https://github.com/feri-irawan/fiimage
+```
+
+Output:
+
+![Captured fiimage web page](https://fiimage.vercel.app/capture?s=1280x720&url=https://github.com/feri-irawan/fiimage)
+
+## Create an Open Graph Image (og:image)
 
 ```
 GET /og
@@ -91,7 +116,7 @@ The query strings are:
 
 | Name                  | Description                                                            |
 | --------------------- | ---------------------------------------------------------------------- |
-| `url`                 | The your web URL (must be start with `https://` or `http://` protocol) |
+| `url`                 | Your web URL (must start with `https://` or `http://`)                 |
 | `template` (optional) | The template (for now you can choose `0` or `1`), default: `0`         |
 
 Example:
