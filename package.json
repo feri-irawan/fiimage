@@ -20,7 +20,7 @@
     "inline-css": "^4.0.3",
     "puppeteer-core": "^25.10.0",
     "react": "^19.3.0",
-    "satori": "^0.33.4",
+    "satori": "^0.35.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
