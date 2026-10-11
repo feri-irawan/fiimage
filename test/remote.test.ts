@@ -4,6 +4,7 @@ import {
   readResponseBody,
   RemoteBodyTooLargeError,
 } from "../lib/remote";
+import { UpstreamRequestError } from "../lib/errors";
 
 describe("safe remote fetch", () => {
   test("validates each redirect target", async () => {
@@ -77,6 +78,50 @@ describe("safe remote fetch", () => {
 
     await fetchSafeResponse("https://1.1.1.1/start", { fetchImpl });
     expect(cancelled).toBe(true);
+  });
+
+  test("reports unreachable hosts as upstream errors", async () => {
+    let calls = 0;
+    const fetchImpl = (async () => {
+      calls += 1;
+      throw new TypeError("connection refused");
+    }) as unknown as typeof fetch;
+
+    await expect(
+      fetchSafeResponse("https://8.8.8.8/start", { fetchImpl })
+    ).rejects.toBeInstanceOf(UpstreamRequestError);
+    expect(calls).toBe(2);
+  });
+
+  test.each([
+    ["a missing Location header", undefined],
+    ["an unparsable Location header", "http://["],
+  ])("reports redirects with %s as upstream errors", async (_, location) => {
+    const fetchImpl = (async () =>
+      new Response(null, {
+        status: 302,
+        headers: location === undefined ? {} : { location },
+      })) as unknown as typeof fetch;
+
+    await expect(
+      fetchSafeResponse("https://8.8.8.8/start", { fetchImpl })
+    ).rejects.toThrow(
+      new UpstreamRequestError("Remote URL returned an invalid redirect.")
+    );
+  });
+
+  test("reports redirect loops as upstream errors", async () => {
+    const fetchImpl = (async () =>
+      new Response(null, {
+        status: 302,
+        headers: { location: "https://8.8.8.8/loop" },
+      })) as unknown as typeof fetch;
+
+    await expect(
+      fetchSafeResponse("https://8.8.8.8/start", { fetchImpl })
+    ).rejects.toThrow(
+      new UpstreamRequestError("Remote URL redirected too many times.")
+    );
   });
 
   test("caps chunked response bodies", async () => {

@@ -2,6 +2,9 @@ import { NextFunction, Request, Response } from "express";
 import {
   PayloadTooLargeError,
   RequestTimeoutError,
+  UnprocessableMediaError,
+  UnsupportedMediaTypeError,
+  UpstreamRequestError,
   UpstreamResponseError,
 } from "./errors";
 
@@ -28,8 +31,19 @@ export const handleError = (
     res.status(504).json({ error: error.message });
     return;
   }
-  if (error instanceof UpstreamResponseError) {
+  if (
+    error instanceof UpstreamResponseError ||
+    error instanceof UpstreamRequestError
+  ) {
     res.status(502).json({ error: error.message });
+    return;
+  }
+  if (error instanceof UnsupportedMediaTypeError) {
+    res.status(415).json({ error: error.message });
+    return;
+  }
+  if (error instanceof UnprocessableMediaError) {
+    res.status(422).json({ error: error.message });
     return;
   }
 
