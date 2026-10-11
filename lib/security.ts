@@ -109,14 +109,25 @@ const isBlockedAddress = (address: string): boolean => {
   return true;
 };
 
+export type HostLookup = (
+  hostname: string,
+  options: { all: true; verbatim: true }
+) => Promise<Array<{ address: string }>>;
+
 type SafeUrlOptions = {
   timeoutMs?: number;
+  /** DNS lookup, replaceable in tests. */
+  lookupImpl?: HostLookup;
 };
 
-/** Reject URLs that resolve to local, private, or otherwise non-public networks. */
-export const assertSafeHttpUrl = async (
+/**
+ * Reject URLs that resolve to local, private, or otherwise non-public
+ * networks, and return the validated addresses so callers can connect to
+ * exactly those instead of resolving the hostname again.
+ */
+export const resolveSafeHttpUrl = async (
   rawUrl: string,
-  { timeoutMs = 5_000 }: SafeUrlOptions = {}
+  { timeoutMs = 5_000, lookupImpl = lookup }: SafeUrlOptions = {}
 ) => {
   const url = new URL(rawUrl);
 
@@ -145,7 +156,7 @@ export const assertSafeHttpUrl = async (
     if (literal) {
       addresses = [{ address: hostname }];
     } else {
-      const lookupPromise = lookup(hostname, { all: true, verbatim: true });
+      const lookupPromise = lookupImpl(hostname, { all: true, verbatim: true });
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
         addresses = await Promise.race([
@@ -172,5 +183,9 @@ export const assertSafeHttpUrl = async (
     throw new UnsafeHttpUrlError("Private network URLs are not allowed.");
   }
 
-  return url;
+  return { url, addresses: addresses.map(({ address }) => address) };
 };
+
+/** Reject URLs that resolve to local, private, or otherwise non-public networks. */
+export const assertSafeHttpUrl = async (rawUrl: string, options?: SafeUrlOptions) =>
+  (await resolveSafeHttpUrl(rawUrl, options)).url;

@@ -3,7 +3,9 @@ import {
   RequestTimeoutError,
   UpstreamRequestError,
 } from "./errors";
-import { assertSafeHttpUrl } from "./security";
+import { isIP } from "node:net";
+import { checkServerIdentity } from "node:tls";
+import { HostLookup, resolveSafeHttpUrl } from "./security";
 
 const MAX_REDIRECTS = 5;
 const MAX_FETCH_ATTEMPTS = 2;
@@ -26,6 +28,44 @@ type FetchSafeOptions = {
   headers?: HeadersInit;
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
+  lookupImpl?: HostLookup;
+};
+
+/**
+ * Build a request that connects to an already validated address. Resolving
+ * the hostname again in fetch would let a DNS rebinding answer swap in a
+ * private address after the safety check. The original hostname is kept for
+ * the Host header, TLS SNI, and certificate verification.
+ */
+export const createPinnedRequest = (
+  rawUrl: string,
+  address: string,
+  headers: HeadersInit | undefined
+): [string, Parameters<typeof fetch>[1]] => {
+  const url = new URL(rawUrl);
+  const hostname = url.hostname.replace(/^\[|\]$/g, "");
+  if (isIP(hostname)) return [rawUrl, { headers }];
+
+  const target = new URL(url);
+  target.hostname = isIP(address) === 6 ? `[${address}]` : address;
+  const pinnedHeaders = new Headers(headers);
+  pinnedHeaders.set("Host", url.host);
+
+  return [
+    target.toString(),
+    {
+      headers: pinnedHeaders,
+      ...(url.protocol === "https:"
+        ? {
+            tls: {
+              serverName: hostname,
+              checkServerIdentity: (_host, certificate) =>
+                checkServerIdentity(hostname, certificate),
+            },
+          }
+        : {}),
+    },
+  ];
 };
 
 type ReadResponseBodyOptions = {
@@ -35,7 +75,7 @@ type ReadResponseBodyOptions = {
 /** Fetch a public URL while validating every redirect target. */
 export const fetchSafeResponse = async (
   startUrl: string,
-  { headers, timeoutMs = 30_000, fetchImpl = fetch }: FetchSafeOptions = {}
+  { headers, timeoutMs = 30_000, fetchImpl = fetch, lookupImpl }: FetchSafeOptions = {}
 ) => {
   let currentUrl = startUrl;
   const deadline = Date.now() + timeoutMs;
@@ -45,7 +85,10 @@ export const fetchSafeResponse = async (
     if (remainingMs <= 0) {
       throw new RemoteTimeoutError("Remote URL request timed out.");
     }
-    await assertSafeHttpUrl(currentUrl, { timeoutMs: remainingMs });
+    const { addresses } = await resolveSafeHttpUrl(currentUrl, {
+      timeoutMs: remainingMs,
+      lookupImpl,
+    });
 
     let response: Response | undefined;
     for (let attempt = 0; attempt < MAX_FETCH_ATTEMPTS; attempt += 1) {
@@ -54,11 +97,17 @@ export const fetchSafeResponse = async (
         throw new RemoteTimeoutError("Remote URL request timed out.");
       }
 
+      // A retry moves on to the next validated address, if there is one.
+      const [input, init] = createPinnedRequest(
+        currentUrl,
+        addresses[attempt % addresses.length],
+        headers
+      );
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), attemptTimeoutMs);
       try {
-        response = await fetchImpl(currentUrl, {
-          headers,
+        response = await fetchImpl(input, {
+          ...init,
           redirect: "manual",
           signal: controller.signal,
         });
@@ -100,6 +149,9 @@ export const fetchSafeResponse = async (
       continue;
     }
 
+    // Report the hostname URL, not the pinned IP, so callers resolve relative
+    // links (such as Open Graph icons) against the page's real origin.
+    Object.defineProperty(response, "url", { value: currentUrl });
     return response;
   }
 
