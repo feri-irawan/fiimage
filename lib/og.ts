@@ -10,7 +10,7 @@ import parse from "html-react-parser";
 import { z } from "zod";
 import inlineCss from "inline-css";
 import { Resvg } from "@resvg/resvg-js";
-import { sendGeneratedImage } from "./response";
+import { sendGeneratedImage, sendTooManyRequests } from "./response";
 import { fetchSafeResponse, readResponseBody } from "./remote";
 import { UnsafeHttpUrlError } from "./security";
 import { httpUrlSchema } from "./validation";
@@ -28,7 +28,7 @@ export const createOGImage = async (req: Request, res: Response) => {
     const query = querySchema.parse(req.query);
     const release = generationGate.tryAcquire();
     if (!release) {
-      res.status(429).json({ error: "Too many image generations are in progress." });
+      sendTooManyRequests(res);
       return;
     }
 

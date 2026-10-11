@@ -38,3 +38,12 @@ export const sendGeneratedImage = (
   setGeneratedImageHeaders(res, contentType);
   res.send(image);
 };
+
+// Generations take seconds, so a short pause is enough for a slot to free up.
+const RETRY_AFTER_SECONDS = 5;
+
+/** Reject a request because this instance is already generating images. */
+export const sendTooManyRequests = (res: Response) => {
+  res.setHeader("Retry-After", String(RETRY_AFTER_SECONDS));
+  res.status(429).json({ error: "Too many image generations are in progress." });
+};
