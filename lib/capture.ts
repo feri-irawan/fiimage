@@ -4,12 +4,16 @@
 
 import Chromium from "@sparticuz/chromium";
 import { Request, Response } from "express";
-import puppeteer from "puppeteer-core";
+import puppeteer, { TimeoutError } from "puppeteer-core";
 import { z } from "zod";
 import { assertSafeHttpUrl, UnsafeHttpUrlError } from "./security";
 import { MAX_RESPONSE_BYTES, sendGeneratedImage } from "./response";
 import { captureSizeSchema, httpUrlSchema } from "./validation";
-import { PayloadTooLargeError, RequestTimeoutError } from "./errors";
+import {
+  PayloadTooLargeError,
+  RequestTimeoutError,
+  UpstreamRequestError,
+} from "./errors";
 import { generationGate } from "./concurrency";
 
 const querySchema = z.object({ url: httpUrlSchema, s: captureSizeSchema });
@@ -38,6 +42,21 @@ const withTimeout = async <T>(
   } finally {
     if (timer) clearTimeout(timer);
   }
+};
+
+/** Map Puppeteer navigation failures to client-facing errors. */
+export const toNavigationError = (error: unknown) => {
+  if (error instanceof TimeoutError) {
+    return new RequestTimeoutError("Page navigation timed out.");
+  }
+  // Chromium reports DNS, connection, TLS and blocked-request failures as
+  // `net::ERR_*`, e.g. "net::ERR_CONNECTION_REFUSED at https://...".
+  if (error instanceof Error && error.message.startsWith("net::ERR_")) {
+    return new UpstreamRequestError("Unable to load the remote page.", {
+      cause: error,
+    });
+  }
+  return error;
 };
 
 /**
@@ -231,7 +250,7 @@ const captureTheWeb = async ({ url, s }: z.infer<typeof querySchema>) => {
       );
     } catch (error) {
       if (pageBytesExceeded) throw new PayloadTooLargeError("Remote page is too large.");
-      throw error;
+      throw toNavigationError(error);
     }
     if (pageBytesExceeded) throw new PayloadTooLargeError("Remote page is too large.");
 

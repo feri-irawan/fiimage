@@ -1,4 +1,8 @@
-import { PayloadTooLargeError, RequestTimeoutError } from "./errors";
+import {
+  PayloadTooLargeError,
+  RequestTimeoutError,
+  UpstreamRequestError,
+} from "./errors";
 import { assertSafeHttpUrl } from "./security";
 
 const MAX_REDIRECTS = 5;
@@ -61,7 +65,9 @@ export const fetchSafeResponse = async (
       } catch (error) {
         if (controller.signal.aborted) throw new RemoteTimeoutError();
         if (attempt === MAX_FETCH_ATTEMPTS - 1 || deadline - Date.now() <= 0) {
-          throw error;
+          throw new UpstreamRequestError("Unable to reach the remote URL.", {
+            cause: error,
+          });
         }
         continue;
       } finally {
@@ -78,23 +84,26 @@ export const fetchSafeResponse = async (
       break;
     }
 
-    if (!response) throw new Error("Remote URL request failed.");
+    if (!response) throw new UpstreamRequestError("Remote URL request failed.");
 
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location");
-      if (!location) {
-        await response.body?.cancel();
-        throw new Error("Remote URL returned an invalid redirect.");
-      }
       await response.body?.cancel();
-      currentUrl = new URL(location, currentUrl).toString();
+      try {
+        if (!location) throw new Error("Missing Location header.");
+        currentUrl = new URL(location, currentUrl).toString();
+      } catch (error) {
+        throw new UpstreamRequestError("Remote URL returned an invalid redirect.", {
+          cause: error,
+        });
+      }
       continue;
     }
 
     return response;
   }
 
-  throw new Error("Remote URL redirected too many times.");
+  throw new UpstreamRequestError("Remote URL redirected too many times.");
 };
 
 const readChunk = async (

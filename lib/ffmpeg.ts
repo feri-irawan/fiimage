@@ -7,7 +7,13 @@ import {
 } from "./remote";
 import { MAX_DIMENSION } from "./validation";
 import { MAX_RESPONSE_BYTES } from "./response";
-import { PayloadTooLargeError, UpstreamResponseError } from "./errors";
+import {
+  PayloadTooLargeError,
+  RequestTimeoutError,
+  UnprocessableMediaError,
+  UnsupportedMediaTypeError,
+  UpstreamResponseError,
+} from "./errors";
 
 const MAX_INPUT_BYTES = 200 * 1024 * 1024;
 const FFMPEG_TIMEOUT_MS = 50_000;
@@ -20,6 +26,19 @@ const SUPPORTED_IMAGE_TYPES = new Set([
   "image/gif",
   "image/bmp",
 ]);
+
+/**
+ * Content types that are clearly documents, such as a web page passed as
+ * `url`. Other types, including `text/plain` and `application/octet-stream`,
+ * are still handed to FFmpeg because some hosts mislabel media.
+ */
+const isDocumentType = (contentType: string) =>
+  (contentType.startsWith("text/") && contentType !== "text/plain") ||
+  contentType === "application/json" ||
+  contentType === "application/xml" ||
+  contentType === "application/javascript" ||
+  contentType.endsWith("+json") ||
+  contentType.endsWith("+xml");
 
 export type ThumbnailSize = {
   width: number;
@@ -52,6 +71,8 @@ export const generateVideoThumbnail = async (
     throw new PayloadTooLargeError("Remote media is too large.");
   }
 
+  // The non-standard extension also keeps FFmpeg from auto-detecting HLS
+  // playlists, which could otherwise reference other local files.
   const inputPath = `/tmp/fiimage-${crypto.randomUUID()}.media`;
   const args = [
     "-hide_banner",
@@ -60,9 +81,11 @@ export const generateVideoThumbnail = async (
     "-y",
     "-protocol_whitelist",
     "file,pipe",
+    // Seek as an input option so FFmpeg jumps to the nearest keyframe instead
+    // of decoding every frame before `t`.
+    ...(seek === undefined ? [] : ["-ss", String(seek)]),
     "-i",
     inputPath,
-    ...(seek === undefined ? [] : ["-ss", String(seek)]),
     "-frames:v",
     "1",
     "-vf",
@@ -116,13 +139,26 @@ export const generateVideoThumbnail = async (
       throw error;
     }
 
+    if (process.signalCode) {
+      if (Date.now() >= deadlineAt) {
+        throw new RequestTimeoutError("Media processing timed out.");
+      }
+      throw new Error(`FFmpeg was killed by ${process.signalCode}.`);
+    }
     if (exitCode !== 0) {
-      throw new Error(
-        `FFmpeg exited with code ${exitCode}.${stderr ? ` ${stderr.trim()}` : ""}`
-      );
+      throw new UnprocessableMediaError("Unable to decode the remote media.", {
+        cause: new Error(
+          `FFmpeg exited with code ${exitCode}.${stderr ? ` ${stderr.trim()}` : ""}`
+        ),
+      });
     }
 
-    if (output.length === 0) throw new Error("FFmpeg returned no image.");
+    // FFmpeg exits successfully without a frame when seeking past the end.
+    if (output.length === 0) {
+      throw new UnprocessableMediaError(
+        seek ? "`t` is beyond the end of the media." : "Remote media has no video frames."
+      );
+    }
     return output;
   } finally {
     await Bun.file(inputPath).delete().catch(() => undefined);
@@ -158,6 +194,12 @@ export const generateThumbnail = async (
   if (SUPPORTED_IMAGE_TYPES.has(contentType)) {
     const { generateImageThumbnail } = await import("./image");
     return await generateImageThumbnail(response, size, deadlineAt);
+  }
+  if (isDocumentType(contentType)) {
+    await response.body?.cancel();
+    throw new UnsupportedMediaTypeError(
+      `The remote URL is not an image or video (${contentType}).`
+    );
   }
 
   return await generateVideoThumbnail(response, size, seek, deadlineAt);
