@@ -4,7 +4,7 @@
 
 import Chromium from "@sparticuz/chromium";
 import { Request, Response } from "express";
-import puppeteer, { TimeoutError } from "puppeteer-core";
+import puppeteer, { Page, TimeoutError } from "puppeteer-core";
 import { z } from "zod";
 import { assertSafeHttpUrl, UnsafeHttpUrlError } from "./security";
 import {
@@ -28,7 +28,10 @@ const querySchema = z.object({ url: httpUrlSchema, s: captureSizeSchema });
 const MAX_PAGE_REQUESTS = 300;
 const MAX_PAGE_BYTES = 50 * 1024 * 1024;
 const MAX_SCREENSHOT_BYTES = MAX_RESPONSE_BYTES;
-const RESOURCE_READY_TIMEOUT = 3_000;
+// After `load`, pages keep fetching content (GitHub's file list, lazy
+// widgets). Wait until the network is quiet, but never longer than this.
+const SETTLE_TIMEOUT_MS = 6_000;
+const NETWORK_IDLE_MS = 500;
 const CAPTURE_TIMEOUT_MS = 50_000;
 
 const remainingTime = (deadlineAt: number) =>
@@ -75,6 +78,49 @@ export const summarizeFailedRequests = (
     );
   }
   return parts.length > 0 ? parts.join("; ") : undefined;
+};
+
+/**
+ * Wait for content that arrives after `load`: requests started by scripts
+ * (until the network has been idle for NETWORK_IDLE_MS), images, and web
+ * fonts. Bounded, so pages that never go quiet are still captured.
+ */
+export const waitForPageToSettle = async (page: Page, deadlineAt: number) => {
+  const limitMs = Math.min(SETTLE_TIMEOUT_MS, Math.max(1, deadlineAt - Date.now()));
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      Promise.all([
+        page
+          .waitForNetworkIdle({ idleTime: NETWORK_IDLE_MS, timeout: limitMs })
+          .catch(() => undefined),
+        // Keep this callback synchronous. TypeScript downlevels async
+        // callbacks for the server bundle, but Puppeteer serializes the
+        // callback and runs it in the page where the generated __awaiter
+        // helper does not exist.
+        page
+          .evaluate(() => {
+            const imagesReady = Promise.all(
+              Array.from(document.images, (image) => {
+                if (image.complete) return Promise.resolve();
+                return new Promise<void>((resolve) => {
+                  image.addEventListener("load", () => resolve(), { once: true });
+                  image.addEventListener("error", () => resolve(), { once: true });
+                });
+              })
+            );
+
+            return imagesReady.then(() => document.fonts?.ready);
+          })
+          .catch(() => undefined),
+      ]),
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, limitMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 };
 
 /** Map Puppeteer navigation failures to client-facing errors. */
@@ -335,32 +381,7 @@ const captureThroughProxy = async (
     if (pageBytesExceeded) throw new PayloadTooLargeError("Remote page is too large.");
 
     await withTimeout(
-      Promise.race([
-        // Keep this callback synchronous. TypeScript downlevels async
-        // callbacks for the server bundle, but Puppeteer serializes the
-        // callback and runs it in the page where the generated __awaiter
-        // helper does not exist.
-        page.evaluate(() => {
-          const imagesReady = Promise.all(
-            Array.from(document.images, (image) => {
-              if (image.complete) return Promise.resolve();
-              return new Promise<void>((resolve) => {
-                image.addEventListener("load", () => resolve(), { once: true });
-                image.addEventListener("error", () => resolve(), { once: true });
-              });
-            })
-          );
-
-          return imagesReady.then(() => document.fonts?.ready);
-        }),
-        new Promise<void>((resolve) =>
-          setTimeout(
-            resolve,
-            Math.min(RESOURCE_READY_TIMEOUT, Math.max(1, deadlineAt - Date.now()))
-          )
-        ),
-        pageBudget,
-      ]),
+      Promise.race([waitForPageToSettle(page, deadlineAt), pageBudget]),
       Math.max(1, deadlineAt - Date.now()),
       "Page readiness timed out."
     );
