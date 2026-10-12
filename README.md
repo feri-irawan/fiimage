@@ -119,6 +119,15 @@ The query strings are:
 | `url`                 | Your web URL (must start with `https://` or `http://`)                 |
 | `template` (optional) | The template (for now you can choose `0` or `1`), default: `0`         |
 
+The image content is read from your page:
+
+| Content     | Source, in order of preference                                                         |
+| ----------- | -------------------------------------------------------------------------------------- |
+| Title       | `og:title`, `twitter:title`, `<title>`, then the hostname                              |
+| Description | `og:description`, `twitter:description`, `<meta name="description">`                   |
+| Icon        | `apple-touch-icon`, then `icon` links (PNG, JPEG, WebP, or GIF; ICO and SVG are skipped) |
+| URL         | The `url` you pass, without its query string or fragment                               |
+
 Example:
 
 ```

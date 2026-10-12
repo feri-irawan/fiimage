@@ -35,18 +35,7 @@ export const createOGImage = async (req: Request, res: Response) => {
     try {
       const deadlineAt = Date.now() + OG_TIMEOUT_MS;
       const metadata = await getPageMetadata(query.url, deadlineAt);
-      const template = await useTheTemplate(metadata, query.template);
-      const htmlObject = parse(template);
-      const svg = await withDeadline(
-        createSVGFromHTMLObject(htmlObject),
-        deadlineAt,
-        "Open Graph SVG generation timed out."
-      );
-      const png = await withDeadline(
-        createPNGFromSVG(svg),
-        deadlineAt,
-        "Open Graph PNG generation timed out."
-      );
+      const png = await renderOGImage(metadata, query.template, deadlineAt);
 
       sendGeneratedImage(res, "image/png", png);
     } finally {
@@ -104,11 +93,108 @@ const loadSatori = async () => {
   return (await import("satori")).default;
 };
 
-type TMetadata = {
+export type TMetadata = {
   title: string;
   description?: string;
   url?: string;
   icon?: string;
+};
+
+/** Icon links in preference order; touch icons are usually larger PNGs. */
+const ICON_SELECTORS = [
+  'link[rel~="apple-touch-icon" i]',
+  'link[rel~="apple-touch-icon-precomposed" i]',
+  'link[rel~="icon" i]',
+];
+const MAX_ICON_CANDIDATES = 3;
+
+/** Read `charset=` from a Content-Type header value. */
+const getCharsetParameter = (contentType: string) =>
+  /charset\s*=\s*["']?([^\s"';]+)/i.exec(contentType)?.[1];
+
+/** Detect the encoding from a byte-order mark. */
+const getBomEncoding = (body: Uint8Array) => {
+  if (body[0] === 0xef && body[1] === 0xbb && body[2] === 0xbf) return "utf-8";
+  if (body[0] === 0xfe && body[1] === 0xff) return "utf-16be";
+  if (body[0] === 0xff && body[1] === 0xfe) return "utf-16le";
+};
+
+/**
+ * Find `<meta charset>` or `<meta http-equiv content="...; charset=">` in the
+ * first 1024 bytes, like the HTML encoding prescan.
+ */
+const getMetaCharset = (body: Uint8Array) => {
+  const head = new TextDecoder("windows-1252").decode(body.subarray(0, 1024));
+  const charset = /<meta\s[^>]*?charset\s*=\s*["']?\s*([^\s"'/>;]+)/i.exec(head)?.[1];
+  // A document that could be read as ASCII to find this tag is not UTF-16.
+  return charset?.toLowerCase().startsWith("utf-16") ? "utf-8" : charset;
+};
+
+/** Decode HTML with its BOM, HTTP charset, or `<meta>` charset, else UTF-8. */
+export const decodeHtml = (body: Uint8Array, contentType = "") => {
+  const label =
+    getBomEncoding(body) ??
+    getCharsetParameter(contentType) ??
+    getMetaCharset(body) ??
+    "utf-8";
+  try {
+    return new TextDecoder(label).decode(body);
+  } catch {
+    // Unknown labels throw a RangeError.
+    return new TextDecoder().decode(body);
+  }
+};
+
+/** Collapse whitespace and cap the length without splitting characters. */
+const cleanText = (value: string | undefined, maxLength: number) => {
+  const text = value?.replace(/\s+/g, " ").trim();
+  if (!text) return;
+  const characters = Array.from(text);
+  return characters.length > maxLength
+    ? `${characters.slice(0, maxLength - 1).join("")}…`
+    : text;
+};
+
+/** Show the page URL without query strings or fragments such as UTM tags. */
+const formatDisplayUrl = (url: string) => {
+  const displayUrl = new URL(url);
+  displayUrl.search = "";
+  displayUrl.hash = "";
+  const text = displayUrl.toString();
+  return displayUrl.pathname === "/" ? text.slice(0, -1) : text;
+};
+
+/** Extract the title, description, and icon candidates from a page. */
+export const parsePageMetadata = (html: string, pageUrl: string) => {
+  const $ = load(html);
+  const meta = (...keys: string[]) => {
+    for (const key of keys) {
+      const content = $(`meta[property="${key}" i], meta[name="${key}" i]`)
+        .first()
+        .attr("content");
+      if (content?.trim()) return content;
+    }
+  };
+
+  const iconUrls = new Set<string>();
+  for (const selector of ICON_SELECTORS) {
+    $(selector).each((_, element) => {
+      const iconUrl = createValidIconUrl(pageUrl, $(element).attr("href") || "");
+      if (iconUrl) iconUrls.add(iconUrl);
+    });
+  }
+
+  return {
+    title:
+      cleanText(meta("og:title", "twitter:title"), MAX_TITLE_LENGTH) ??
+      cleanText($("title").first().text(), MAX_TITLE_LENGTH) ??
+      new URL(pageUrl).hostname,
+    description: cleanText(
+      meta("og:description", "twitter:description", "description"),
+      MAX_DESCRIPTION_LENGTH
+    ),
+    iconUrls: [...iconUrls].slice(0, MAX_ICON_CANDIDATES),
+  };
 };
 
 /**
@@ -116,14 +202,16 @@ type TMetadata = {
  * @param url
  * @returns Metadata object
  */
-const getPageMetadata = async (
+export const getPageMetadata = async (
   url: string,
-  deadlineAt: number
+  deadlineAt: number,
+  fetchImpl: typeof fetch = fetch
 ): Promise<TMetadata> => {
   const pageDeadlineAt = Math.min(deadlineAt, Date.now() + 10_000);
   const response = await fetchSafeResponse(url, {
     headers: { Accept: "text/html,application/xhtml+xml" },
     timeoutMs: Math.max(1, pageDeadlineAt - Date.now()),
+    fetchImpl,
   });
   if (!response.ok) {
     await response.body?.cancel();
@@ -143,26 +231,25 @@ const getPageMetadata = async (
     timeoutMs: Math.max(1, pageDeadlineAt - Date.now()),
   });
 
-  const html = new TextDecoder().decode(body);
-  const $ = load(html);
-
-  const iconUrl = createValidIconUrl(
-    response.url || url,
-    $("link[rel=icon]").attr("href") || ""
+  const html = decodeHtml(body, response.headers.get("content-type") || "");
+  const { title, description, iconUrls } = parsePageMetadata(
+    html,
+    response.url || url
   );
-  const icon =
-    iconUrl && pageDeadlineAt > Date.now()
-      ? await fetchIconDataUrl(iconUrl, Math.max(1, pageDeadlineAt - Date.now()))
-      : undefined;
 
-  return {
-    title: $("title").first().text().slice(0, MAX_TITLE_LENGTH),
-    description: $("meta[name=description]")
-      .attr("content")
-      ?.slice(0, MAX_DESCRIPTION_LENGTH),
-    icon,
-    url,
-  };
+  // Try the next candidate when an icon is missing or in an unsupported format.
+  let icon: string | undefined;
+  for (const iconUrl of iconUrls) {
+    if (pageDeadlineAt <= Date.now()) break;
+    icon = await fetchIconDataUrl(
+      iconUrl,
+      Math.max(1, pageDeadlineAt - Date.now()),
+      fetchImpl
+    );
+    if (icon) break;
+  }
+
+  return { title, description, icon, url: formatDisplayUrl(url) };
 };
 
 /** Create a valid icon URL */
@@ -179,17 +266,24 @@ const createValidIconUrl = (url: string, icon: string) => {
 
   // Do not proxy ICOs through this service. That would create an indirect
   // fetch path whose nested URL is no longer visible to this request.
-  if (iconUrl.pathname.toLowerCase().endsWith(".ico")) return;
+  // SVG icons cannot be decoded by Bun.Image, so skip the fetch.
+  const pathname = iconUrl.pathname.toLowerCase();
+  if (pathname.endsWith(".ico") || pathname.endsWith(".svg")) return;
 
   return iconUrl.toString();
 };
 
 /** Fetch optional favicon bytes safely; a bad icon should not break OG output. */
-const fetchIconDataUrl = async (url: string, timeoutMs: number) => {
+const fetchIconDataUrl = async (
+  url: string,
+  timeoutMs: number,
+  fetchImpl: typeof fetch = fetch
+) => {
   try {
     const response = await fetchSafeResponse(url, {
       headers: { Accept: "image/png,image/jpeg,image/webp,image/gif" },
       timeoutMs,
+      fetchImpl,
     });
     if (!response.ok) {
       await response.body?.cancel();
@@ -226,6 +320,25 @@ const fetchIconDataUrl = async (url: string, timeoutMs: number) => {
   } catch {
     return;
   }
+};
+
+/** Render page metadata into a 1200x630 PNG with the chosen template. */
+export const renderOGImage = async (
+  metadata: TMetadata,
+  template: z.infer<typeof templateSchema> = "0",
+  deadlineAt = Date.now() + OG_TIMEOUT_MS
+) => {
+  const htmlObject = parse(await useTheTemplate(metadata, template));
+  const svg = await withDeadline(
+    createSVGFromHTMLObject(htmlObject),
+    deadlineAt,
+    "Open Graph SVG generation timed out."
+  );
+  return await withDeadline(
+    createPNGFromSVG(svg),
+    deadlineAt,
+    "Open Graph PNG generation timed out."
+  );
 };
 
 /**
