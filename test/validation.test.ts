@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import {
   captureSizeSchema,
+  fitSchema,
   httpUrlSchema,
+  outputFormatSchema,
+  qualitySchema,
   thumbnailSizeSchema,
   timestampSchema,
 } from "../lib/validation";
@@ -47,5 +50,33 @@ describe("query validation", () => {
       true
     );
     expect(httpUrlSchema.safeParse("file:///tmp/image.png").success).toBe(false);
+  });
+
+  test("defaults the output options to today's JPEG output", () => {
+    expect(outputFormatSchema.parse(undefined)).toBe("jpeg");
+    expect(qualitySchema.parse(undefined)).toBe(85);
+    expect(fitSchema.parse(undefined)).toBe("fill");
+  });
+
+  test("accepts output formats, with jpg as an alias", () => {
+    expect(outputFormatSchema.parse("png")).toBe("png");
+    expect(outputFormatSchema.parse("webp")).toBe("webp");
+    expect(outputFormatSchema.parse("jpg")).toBe("jpeg");
+    expect(outputFormatSchema.safeParse("gif").success).toBe(false);
+  });
+
+  test.each(["0", "101", "50.5", "-1", "abc", ""])("rejects quality %p", (value) => {
+    expect(qualitySchema.safeParse(value).success).toBe(false);
+  });
+
+  test("accepts quality from 1 to 100", () => {
+    expect(qualitySchema.parse("1")).toBe(1);
+    expect(qualitySchema.parse("100")).toBe(100);
+  });
+
+  test("accepts fit modes", () => {
+    expect(fitSchema.parse("cover")).toBe("cover");
+    expect(fitSchema.parse("contain")).toBe("contain");
+    expect(fitSchema.safeParse("stretch").success).toBe(false);
   });
 });

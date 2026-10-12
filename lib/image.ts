@@ -1,4 +1,4 @@
-import { MAX_DIMENSION } from "./validation";
+import { Fit, MAX_DIMENSION, OutputFormat } from "./validation";
 import { readResponseBody } from "./remote";
 import { MAX_RESPONSE_BYTES } from "./response";
 import { PayloadTooLargeError, UnprocessableMediaError } from "./errors";
@@ -9,11 +9,27 @@ export type ThumbnailSize = {
   height: number;
 };
 
-const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
+export type OutputOptions = {
+  format: OutputFormat;
+  quality: number;
+  fit: Fit;
+};
+
+export const DEFAULT_OUTPUT: OutputOptions = {
+  format: "jpeg",
+  quality: 85,
+  fit: "fill",
+};
+
+/** True when `fit` changes the result: both sides of the box are fixed. */
+export const hasFixedBox = (size: ThumbnailSize) =>
+  size.width !== -1 && size.height !== -1;
+
+export const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
 // Source images may be larger than the output cap: a typical phone photo is
 // 24-48 MP. MAX_IMAGE_BYTES still bounds the download, and this bounds the
 // decoded bitmap (64 MP of RGBA is about 256 MB).
-const MAX_SOURCE_PIXELS = 8192 * 8192;
+export const MAX_SOURCE_PIXELS = 8192 * 8192;
 
 /** Translate Bun.Image decode failures into client-facing errors. */
 const toImageError = (error: unknown) => {
@@ -29,10 +45,52 @@ const toImageError = (error: unknown) => {
   return error;
 };
 
-/** Resize common raster images with Bun's native off-thread image pipeline. */
+/** Set the encoder for the requested output format on a pipeline. */
+const withEncoder = (image: Bun.Image, { format, quality }: OutputOptions) => {
+  if (format === "png") return image.png();
+  if (format === "webp") return image.webp({ quality });
+  return image.jpeg({ quality, progressive: true });
+};
+
+const encode = async (
+  image: Bun.Image,
+  output: OutputOptions,
+  deadlineAt: number
+) => {
+  const encoded = await withDeadline(
+    withEncoder(image, output).buffer(),
+    deadlineAt,
+    "Image encoding timed out."
+  ).catch((error) => {
+    throw toImageError(error);
+  });
+
+  if (encoded.length > MAX_RESPONSE_BYTES) {
+    throw new PayloadTooLargeError("Generated image is too large.");
+  }
+  return encoded;
+};
+
+/** Encode a frame FFmpeg has already sized and cropped. */
+export const encodeFrame = (
+  frame: Uint8Array,
+  output: OutputOptions,
+  deadlineAt = Date.now() + 30_000
+) =>
+  encode(
+    new Bun.Image(frame, { maxPixels: MAX_DIMENSION * MAX_DIMENSION }),
+    output,
+    deadlineAt
+  );
+
+/**
+ * Resize common raster images with Bun's native off-thread image pipeline.
+ * `fit=cover` needs a crop, which Bun.Image lacks, so it goes through FFmpeg.
+ */
 export const generateImageThumbnail = async (
   response: Response,
   size: ThumbnailSize,
+  output: OutputOptions = DEFAULT_OUTPUT,
   deadlineAt = Date.now() + 30_000
 ) => {
   const contentLength = Number(response.headers.get("content-length") || 0);
@@ -70,19 +128,10 @@ export const generateImageThumbnail = async (
     throw new PayloadTooLargeError("Generated image dimensions are too large.");
   }
 
-  const output = await withDeadline(
-    image
-      .resize(width, height)
-      .jpeg({ quality: 85, progressive: true })
-      .buffer(),
-    deadlineAt,
-    "Image encoding timed out."
-  ).catch((error) => {
-    throw toImageError(error);
-  });
-
-  if (output.length > MAX_RESPONSE_BYTES) {
-    throw new PayloadTooLargeError("Generated image is too large.");
-  }
-  return output;
+  const contain = output.fit === "contain" && hasFixedBox(size);
+  return await encode(
+    image.resize(width, height, contain ? { fit: "inside" } : undefined),
+    output,
+    deadlineAt
+  );
 };

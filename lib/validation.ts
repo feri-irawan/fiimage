@@ -94,3 +94,33 @@ export const timestampSchema = z
       .max(24 * 60 * 60, { error: "`t` invalid." })
   )
   .optional();
+
+export const OUTPUT_FORMATS = ["jpeg", "png", "webp"] as const;
+export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
+
+const invalidFormat = { error: "`f` invalid." };
+
+/** Output format; `jpg` is accepted as an alias for `jpeg`. */
+export const outputFormatSchema = z
+  .enum([...OUTPUT_FORMATS, "jpg"], invalidFormat)
+  .default("jpeg")
+  .transform((format): OutputFormat => (format === "jpg" ? "jpeg" : format));
+
+const invalidQuality = { error: "`q` invalid." };
+
+/** JPEG and WebP quality from 1 to 100; PNG ignores it. */
+export const qualitySchema = z
+  .string(invalidQuality)
+  .regex(/^\d{1,3}$/, invalidQuality)
+  .default("85")
+  .transform(Number)
+  .pipe(z.number().int().min(1, invalidQuality).max(100, invalidQuality));
+
+export const FITS = ["fill", "cover", "contain"] as const;
+export type Fit = (typeof FITS)[number];
+
+/**
+ * How a fixed `s=WxH` box is filled: `fill` stretches, `cover` crops the
+ * center, `contain` fits inside. Sizes with `?` always keep the aspect ratio.
+ */
+export const fitSchema = z.enum(FITS, { error: "`fit` invalid." }).default("fill");
