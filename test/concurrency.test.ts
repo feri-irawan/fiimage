@@ -12,7 +12,9 @@ describe("generation concurrency", () => {
 
     first?.();
     first?.();
-    expect(generationGate.tryAcquire()).toBeFunction();
+    const third = generationGate.tryAcquire();
+    expect(third).toBeFunction();
+    third?.();
 
     second?.();
     const final = generationGate.tryAcquire();

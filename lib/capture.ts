@@ -7,7 +7,11 @@ import { Request, Response } from "express";
 import puppeteer, { TimeoutError } from "puppeteer-core";
 import { z } from "zod";
 import { assertSafeHttpUrl, UnsafeHttpUrlError } from "./security";
-import { MAX_RESPONSE_BYTES, sendGeneratedImage } from "./response";
+import {
+  MAX_RESPONSE_BYTES,
+  sendGeneratedImage,
+  sendTooManyRequests,
+} from "./response";
 import { captureSizeSchema, httpUrlSchema } from "./validation";
 import {
   PayloadTooLargeError,
@@ -68,7 +72,7 @@ export const capture = async (req: Request, res: Response) => {
     const { url, s } = querySchema.parse(req.query);
     const release = generationGate.tryAcquire();
     if (!release) {
-      res.status(429).json({ error: "Too many image generations are in progress." });
+      sendTooManyRequests(res);
       return;
     }
 

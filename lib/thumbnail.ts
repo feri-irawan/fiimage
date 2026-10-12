@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { z } from "zod";
-import { sendGeneratedImage } from "./response";
+import { sendGeneratedImage, sendTooManyRequests } from "./response";
 import {
   httpUrlSchema,
   thumbnailSizeSchema,
@@ -21,7 +21,7 @@ export const generateThumbnail = async (req: Request, res: Response) => {
     const { url, s, t } = querySchema.parse(req.query);
     const release = generationGate.tryAcquire();
     if (!release) {
-      res.status(429).json({ error: "Too many image generations are in progress." });
+      sendTooManyRequests(res);
       return;
     }
 
