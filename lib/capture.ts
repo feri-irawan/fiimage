@@ -19,6 +19,7 @@ import {
   UpstreamRequestError,
 } from "./errors";
 import { generationGate } from "./concurrency";
+import { getBrowserProxyArgs, startBrowserProxy } from "./browser-proxy";
 
 const querySchema = z.object({ url: httpUrlSchema, s: captureSizeSchema });
 const MAX_PAGE_REQUESTS = 100;
@@ -103,18 +104,35 @@ export const capture = async (req: Request, res: Response) => {
 };
 
 /** Capture the web page using Puppeteer */
-const captureTheWeb = async ({ url, s }: z.infer<typeof querySchema>) => {
+const captureTheWeb = async (query: z.infer<typeof querySchema>) => {
+  // Every browser request goes through this proxy, which connects only to
+  // the address it validated so DNS rebinding cannot reach private networks.
+  const proxy = await startBrowserProxy();
+  try {
+    return await captureThroughProxy(query, proxy.url);
+  } finally {
+    proxy.close();
+  }
+};
+
+const captureThroughProxy = async (
+  { url, s }: z.infer<typeof querySchema>,
+  proxyUrl: string
+) => {
   const deadlineAt = Date.now() + CAPTURE_TIMEOUT_MS;
   const executablePath = await withTimeout(
     Chromium.executablePath(),
     Math.max(1, deadlineAt - Date.now()),
     "Chromium preparation timed out."
   );
-  const args = await withTimeout(
-    puppeteer.defaultArgs({ args: Chromium.args, headless: "shell" }),
-    remainingTime(deadlineAt),
-    "Browser argument preparation timed out."
-  );
+  const args = [
+    ...(await withTimeout(
+      puppeteer.defaultArgs({ args: Chromium.args, headless: "shell" }),
+      remainingTime(deadlineAt),
+      "Browser argument preparation timed out."
+    )),
+    ...getBrowserProxyArgs(proxyUrl),
+  ];
   const launchPromise = puppeteer.launch({
     args,
     executablePath,
@@ -224,6 +242,8 @@ const captureTheWeb = async ({ url, s }: z.infer<typeof querySchema>) => {
         return;
       }
 
+      // A fast first filter; the proxy repeats the check on the address it
+      // actually connects to, which is what stops DNS rebinding.
       void assertSafeHttpUrl(requestUrl)
         .then(() => {
           if (!request.isInterceptResolutionHandled()) return request.continue();
