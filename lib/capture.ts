@@ -22,7 +22,10 @@ import { generationGate } from "./concurrency";
 import { getBrowserProxyArgs, startBrowserProxy } from "./browser-proxy";
 
 const querySchema = z.object({ url: httpUrlSchema, s: captureSizeSchema });
-const MAX_PAGE_REQUESTS = 100;
+// Content-heavy pages (GitHub, news sites) make well over 100 requests; a low
+// cap drops their later images and icons. The byte budget and deadlines below
+// still bound the total work.
+const MAX_PAGE_REQUESTS = 300;
 const MAX_PAGE_BYTES = 50 * 1024 * 1024;
 const MAX_SCREENSHOT_BYTES = MAX_RESPONSE_BYTES;
 const RESOURCE_READY_TIMEOUT = 3_000;
@@ -47,6 +50,31 @@ const withTimeout = async <T>(
   } finally {
     if (timer) clearTimeout(timer);
   }
+};
+
+/**
+ * Summarize failed subresources as one log line, so a capture that renders
+ * without styles or images shows which hosts failed and why.
+ */
+export const summarizeFailedRequests = (
+  failures: Map<string, number>,
+  skippedRequests: number
+) => {
+  const parts: string[] = [];
+  if (failures.size > 0) {
+    const total = [...failures.values()].reduce((sum, count) => sum + count, 0);
+    const top = [...failures]
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 10)
+      .map(([reason, count]) => `${reason} x${count}`);
+    parts.push(`${total} requests failed: ${top.join(", ")}`);
+  }
+  if (skippedRequests > 0) {
+    parts.push(
+      `${skippedRequests} requests over the ${MAX_PAGE_REQUESTS}-request limit were skipped`
+    );
+  }
+  return parts.length > 0 ? parts.join("; ") : undefined;
 };
 
 /** Map Puppeteer navigation failures to client-facing errors. */
@@ -165,6 +193,8 @@ const captureThroughProxy = async (
     throw error;
   }
 
+  const failures = new Map<string, number>();
+  let skippedRequests = 0;
   try {
     const page = await withTimeout(
       browser.newPage(),
@@ -221,9 +251,26 @@ const captureThroughProxy = async (
       remainingTime(deadlineAt),
       "Browser request setup timed out."
     );
+    // Requests this handler aborts on purpose; their failures are reported
+    // as skipped or blocked rather than as network errors.
+    const skipped = new WeakSet<object>();
+    const blocked = new WeakMap<object, string>();
+    page.on("requestfailed", (request) => {
+      if (skipped.has(request)) return;
+      let host = "(invalid URL)";
+      try {
+        host = new URL(request.url()).host || request.url().slice(0, 40);
+      } catch {}
+      const reason =
+        blocked.get(request) ?? request.failure()?.errorText ?? "failed";
+      const key = `${host} ${reason}`;
+      failures.set(key, (failures.get(key) ?? 0) + 1);
+    });
     page.on("request", (request) => {
       requestCount += 1;
       if (requestCount > MAX_PAGE_REQUESTS) {
+        skippedRequests += 1;
+        skipped.add(request);
         void request.abort().catch(() => undefined);
         return;
       }
@@ -248,7 +295,16 @@ const captureThroughProxy = async (
         .then(() => {
           if (!request.isInterceptResolutionHandled()) return request.continue();
         })
-        .catch(() => {
+        .catch((error) => {
+          const message = error instanceof Error ? error.message : "";
+          blocked.set(
+            request,
+            message.startsWith("Unable to resolve")
+              ? "DNS lookup failed"
+              : message.startsWith("Private network")
+                ? "blocked: private address"
+                : "blocked: unsupported URL"
+          );
           if (!request.isInterceptResolutionHandled()) return request.abort();
         })
         .catch(() => undefined);
@@ -322,6 +378,9 @@ const captureThroughProxy = async (
     }
     return image;
   } finally {
+    // Vercel keeps these lines in the function logs.
+    const summary = summarizeFailedRequests(failures, skippedRequests);
+    if (summary) console.warn(`[capture] ${new URL(url).host}: ${summary}`);
     try {
       await withTimeout(browser.close(), 2_000, "Browser close timed out.");
     } catch {
