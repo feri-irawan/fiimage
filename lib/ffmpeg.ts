@@ -5,8 +5,16 @@ import {
   RemoteBodyTooLargeError,
   writeResponseBodyToFile,
 } from "./remote";
-import { MAX_DIMENSION } from "./validation";
-import { MAX_RESPONSE_BYTES } from "./response";
+import { Fit, MAX_DIMENSION } from "./validation";
+import {
+  DEFAULT_OUTPUT,
+  encodeFrame,
+  hasFixedBox,
+  MAX_IMAGE_BYTES,
+  MAX_SOURCE_PIXELS,
+  OutputOptions,
+  ThumbnailSize,
+} from "./image";
 import {
   PayloadTooLargeError,
   RequestTimeoutError,
@@ -17,7 +25,9 @@ import {
 
 const MAX_INPUT_BYTES = 200 * 1024 * 1024;
 const FFMPEG_TIMEOUT_MS = 50_000;
-const MAX_OUTPUT_BYTES = MAX_RESPONSE_BYTES;
+// FFmpeg hands over one lossless PNG frame, which is re-encoded in the
+// requested format; a full-size frame can be far larger than the response.
+const MAX_FRAME_BYTES = 64 * 1024 * 1024;
 const MAX_STDERR_BYTES = 64 * 1024;
 const SUPPORTED_IMAGE_TYPES = new Set([
   "image/jpeg",
@@ -40,33 +50,43 @@ const isDocumentType = (contentType: string) =>
   contentType.endsWith("+json") ||
   contentType.endsWith("+xml");
 
-export type ThumbnailSize = {
-  width: number;
-  height: number;
+export type ThumbnailOptions = {
+  size: ThumbnailSize;
+  /** Video timestamp in seconds. */
+  seek?: number;
+  output?: OutputOptions;
 };
 
-const getScaleFilter = (size: ThumbnailSize) => {
+const getVideoFilter = (size: ThumbnailSize, fit: Fit) => {
   if (size.width === -1) {
-    return `min(${MAX_DIMENSION}\\,iw*${size.height}/ih):${size.height}`;
+    return `scale=min(${MAX_DIMENSION}\\,iw*${size.height}/ih):${size.height}`;
   }
   if (size.height === -1) {
-    return `${size.width}:min(${MAX_DIMENSION}\\,ih*${size.width}/iw)`;
+    return `scale=${size.width}:min(${MAX_DIMENSION}\\,ih*${size.width}/iw)`;
   }
-  return `${size.width}:${size.height}`;
+  const box = `${size.width}:${size.height}`;
+  if (fit === "contain") return `scale=${box}:force_original_aspect_ratio=decrease`;
+  if (fit === "cover") {
+    return `scale=${box}:force_original_aspect_ratio=increase,crop=${box}`;
+  }
+  return `scale=${box}`;
 };
 
-/** Generate one JPEG frame from a response without passing user input to a shell. */
-export const generateVideoThumbnail = async (
+/**
+ * Generate one frame with FFmpeg without passing user input to a shell: a
+ * video frame, or a still image that needs the `cover` crop.
+ */
+export const generateFrameThumbnail = async (
   response: Response,
-  size: ThumbnailSize,
-  seek?: number,
-  deadlineAt = Date.now() + FFMPEG_TIMEOUT_MS
+  { size, seek, output = DEFAULT_OUTPUT }: ThumbnailOptions,
+  deadlineAt = Date.now() + FFMPEG_TIMEOUT_MS,
+  maxInputBytes = MAX_INPUT_BYTES
 ): Promise<Buffer> => {
   if (!ffmpegPath) throw new Error("FFmpeg is unavailable on this platform.");
   if (!response.body) throw new Error("Remote media response has no body.");
 
   const contentLength = Number(response.headers.get("content-length") || 0);
-  if (Number.isFinite(contentLength) && contentLength > MAX_INPUT_BYTES) {
+  if (Number.isFinite(contentLength) && contentLength > maxInputBytes) {
     await response.body.cancel();
     throw new PayloadTooLargeError("Remote media is too large.");
   }
@@ -81,6 +101,10 @@ export const generateVideoThumbnail = async (
     "-y",
     "-protocol_whitelist",
     "file,pipe",
+    // Refuse frames larger than the image pipeline accepts before decoding
+    // them, so a small file cannot claim a huge canvas.
+    "-max_pixels",
+    String(MAX_SOURCE_PIXELS),
     // Seek as an input option so FFmpeg jumps to the nearest keyframe instead
     // of decoding every frame before `t`.
     ...(seek === undefined ? [] : ["-ss", String(seek)]),
@@ -89,11 +113,11 @@ export const generateVideoThumbnail = async (
     "-frames:v",
     "1",
     "-vf",
-    `scale=${getScaleFilter(size)}`,
+    getVideoFilter(size, output.fit),
     "-f",
     "image2pipe",
     "-vcodec",
-    "mjpeg",
+    "png",
     "pipe:1",
   ];
 
@@ -101,7 +125,7 @@ export const generateVideoThumbnail = async (
     await writeResponseBodyToFile(
       response,
       inputPath,
-      MAX_INPUT_BYTES,
+      maxInputBytes,
       { timeoutMs: Math.max(1, deadlineAt - Date.now()) }
     );
     const processTimeout = Math.max(1, deadlineAt - Date.now());
@@ -113,12 +137,12 @@ export const generateVideoThumbnail = async (
       killSignal: "SIGKILL",
     });
 
-    let output: Buffer;
+    let frame: Buffer;
     let stderr: string;
     let exitCode: number;
     try {
-      [output, stderr, exitCode] = await Promise.all([
-        readResponseBody(new Response(process.stdout), MAX_OUTPUT_BYTES, {
+      [frame, stderr, exitCode] = await Promise.all([
+        readResponseBody(new Response(process.stdout), MAX_FRAME_BYTES, {
           timeoutMs: processTimeout,
         }),
         readResponseBody(new Response(process.stderr), MAX_STDERR_BYTES, {
@@ -145,6 +169,9 @@ export const generateVideoThumbnail = async (
       }
       throw new Error(`FFmpeg was killed by ${process.signalCode}.`);
     }
+    if (exitCode !== 0 && stderr.includes("exceeds specified max pixel count")) {
+      throw new PayloadTooLargeError("Remote media dimensions are too large.");
+    }
     if (exitCode !== 0) {
       throw new UnprocessableMediaError("Unable to decode the remote media.", {
         cause: new Error(
@@ -154,12 +181,12 @@ export const generateVideoThumbnail = async (
     }
 
     // FFmpeg exits successfully without a frame when seeking past the end.
-    if (output.length === 0) {
+    if (frame.length === 0) {
       throw new UnprocessableMediaError(
         seek ? "`t` is beyond the end of the media." : "Remote media has no video frames."
       );
     }
-    return output;
+    return await encodeFrame(frame, output, deadlineAt);
   } finally {
     await Bun.file(inputPath).delete().catch(() => undefined);
   }
@@ -168,8 +195,7 @@ export const generateVideoThumbnail = async (
 /** Fetch media and dispatch raster images or video to the appropriate pipeline. */
 export const generateThumbnail = async (
   url: string,
-  size: ThumbnailSize,
-  seek?: number,
+  { size, seek, output = DEFAULT_OUTPUT }: ThumbnailOptions,
   fetchImpl: typeof fetch = fetch
 ): Promise<Buffer> => {
   const deadlineAt = Date.now() + FFMPEG_TIMEOUT_MS;
@@ -192,8 +218,17 @@ export const generateThumbnail = async (
     .trim()
     .toLowerCase();
   if (SUPPORTED_IMAGE_TYPES.has(contentType)) {
+    // A still image has no timestamp, so `t` does not apply.
+    if (output.fit === "cover" && hasFixedBox(size)) {
+      return await generateFrameThumbnail(
+        response,
+        { size, output },
+        deadlineAt,
+        MAX_IMAGE_BYTES
+      );
+    }
     const { generateImageThumbnail } = await import("./image");
-    return await generateImageThumbnail(response, size, deadlineAt);
+    return await generateImageThumbnail(response, size, output, deadlineAt);
   }
   if (isDocumentType(contentType)) {
     await response.body?.cancel();
@@ -202,5 +237,5 @@ export const generateThumbnail = async (
     );
   }
 
-  return await generateVideoThumbnail(response, size, seek, deadlineAt);
+  return await generateFrameThumbnail(response, { size, seek, output }, deadlineAt);
 };

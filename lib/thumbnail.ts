@@ -2,7 +2,10 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { sendGeneratedImage, sendTooManyRequests } from "./response";
 import {
+  fitSchema,
   httpUrlSchema,
+  outputFormatSchema,
+  qualitySchema,
   thumbnailSizeSchema,
   timestampSchema,
 } from "./validation";
@@ -13,12 +16,21 @@ const querySchema = z.object({
   url: httpUrlSchema,
   s: thumbnailSizeSchema,
   t: timestampSchema,
+  f: outputFormatSchema,
+  q: qualitySchema,
+  fit: fitSchema,
 });
+
+const CONTENT_TYPES = {
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+} as const;
 
 /** Generate the thumbnail */
 export const generateThumbnail = async (req: Request, res: Response) => {
   try {
-    const { url, s, t } = querySchema.parse(req.query);
+    const { url, s, t, f, q, fit } = querySchema.parse(req.query);
     const release = generationGate.tryAcquire();
     if (!release) {
       sendTooManyRequests(res);
@@ -31,9 +43,13 @@ export const generateThumbnail = async (req: Request, res: Response) => {
       const { generateThumbnail: generateMediaThumbnail } = await import(
         "./ffmpeg"
       );
-      const image = await generateMediaThumbnail(url, s, t);
+      const image = await generateMediaThumbnail(url, {
+        size: s,
+        seek: t,
+        output: { format: f, quality: q, fit },
+      });
 
-      sendGeneratedImage(res, "image/jpeg", image);
+      sendGeneratedImage(res, CONTENT_TYPES[f], image);
     } finally {
       release();
     }

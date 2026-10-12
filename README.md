@@ -10,10 +10,13 @@ GET /
 
 The query strings are:
 
-| Name           | Description                                        |
-| -------------- | -------------------------------------------------- |
-| `url`          | The Image URL                                      |
-| `s` (optional) | The size will be generate. For example `s=100x100` |
+| Name             | Description                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------ |
+| `url`            | The Image URL                                                                        |
+| `s` (optional)   | The size will be generate. For example `s=100x100`                                   |
+| `fit` (optional) | How a fixed size is filled: `fill` (default), `cover`, or `contain`. See [fit](#fit) |
+| `f` (optional)   | The output format: `jpeg` (default, also `jpg`), `png`, or `webp`                    |
+| `q` (optional)   | The quality for `jpeg` and `webp`, from `1` to `100`. Default: `85`                  |
 
 ### Auto Width
 
@@ -57,6 +60,42 @@ Output:
 
 ![Cat](https://fiimage.vercel.app/?s=300x300&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131)
 
+### Fit
+
+When both width and height are set, `fit` decides how the image fills that size:
+
+| `fit`            | Result                                                                    |
+| ---------------- | ------------------------------------------------------------------------- |
+| `fill` (default) | Stretches the image to exactly the size                                   |
+| `cover`          | Fills the size and crops the center, keeping the aspect ratio             |
+| `contain`        | Fits the whole image inside the size, so the result may be smaller        |
+
+Sizes with `?` always keep the aspect ratio, so `fit` does not change them.
+
+Example:
+
+```
+https://fiimage.vercel.app/?s=300x300&fit=cover&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
+```
+
+Output:
+
+![Cat](https://fiimage.vercel.app/?s=300x300&fit=cover&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131)
+
+### Output Format and Quality
+
+Use `f` to choose `jpeg`, `png`, or `webp`. WebP is usually much smaller than JPEG, and PNG and WebP keep transparency. Use `q` to trade quality for size in JPEG and WebP.
+
+Example:
+
+```
+https://fiimage.vercel.app/?s=300x300&fit=cover&f=webp&q=80&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131
+```
+
+Output:
+
+![Cat](https://fiimage.vercel.app/?s=300x300&fit=cover&f=webp&q=80&url=https://images.unsplash.com/photo-1518791841217-8f162f1e1131)
+
 ## Generate Video Thumbnail
 
 ```
@@ -65,11 +104,12 @@ GET /
 
 The query strings are:
 
-| Name           | Description                                                                    |
-| -------------- | ------------------------------------------------------------------------------ |
-| `url`          | The Video URL                                                                  |
-| `s` (optional) | The thumbnail size (similar to [image resize](#resize-image))                  |
-| `t` (optional) | The time (in seconds) of the video that will be used to generate the thumbnail |
+| Name                       | Description                                                                       |
+| -------------------------- | --------------------------------------------------------------------------------- |
+| `url`                      | The Video URL                                                                     |
+| `s` (optional)             | The thumbnail size (similar to [image resize](#resize-image))                     |
+| `t` (optional)             | The time (in seconds) of the video that will be used to generate the thumbnail    |
+| `fit`, `f`, `q` (optional) | The [fit](#fit), [format, and quality](#output-format-and-quality), as for images |
 
 Example:
 
