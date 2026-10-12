@@ -70,7 +70,7 @@ const startOrigin = (respond?: (request: Request) => Response) => {
 
 /** Treat `<name>.public.test` as public and send it to the local origin. */
 const resolveTestHosts = async (url: string) => {
-  if (new URL(url).hostname.endsWith(".public.test")) return "127.0.0.1";
+  if (new URL(url).hostname.endsWith(".public.test")) return ["127.0.0.1"];
   throw new Error("Rejected by the test resolver.");
 };
 
@@ -85,7 +85,7 @@ describe("browser proxy", () => {
       headers.append("Set-Cookie", "b=2");
       return new Response("hello", { headers });
     });
-    const proxy = await startBrowserProxy({ resolveAddress: resolveTestHosts });
+    const proxy = await startBrowserProxy({ resolveAddresses: resolveTestHosts });
     try {
       const response = await requestViaProxy(
         proxy.url,
@@ -110,7 +110,7 @@ describe("browser proxy", () => {
 
   test("drops plain HTTP requests to rejected hosts without contacting them", async () => {
     const origin = startOrigin();
-    const proxy = await startBrowserProxy({ resolveAddress: resolveTestHosts });
+    const proxy = await startBrowserProxy({ resolveAddresses: resolveTestHosts });
     try {
       await expect(
         requestViaProxy(proxy.url, `http://internal.test:${origin.server.port}/secret`)
@@ -124,7 +124,7 @@ describe("browser proxy", () => {
 
   test("tunnels CONNECT requests to the validated address", async () => {
     const origin = startOrigin();
-    const proxy = await startBrowserProxy({ resolveAddress: resolveTestHosts });
+    const proxy = await startBrowserProxy({ resolveAddresses: resolveTestHosts });
     try {
       const authority = `site.public.test:${origin.server.port}`;
       const result = await tunnelViaProxy(proxy.url, authority, "/tunnel");
@@ -132,6 +132,43 @@ describe("browser proxy", () => {
       expect(result.status).toBe("HTTP/1.1 200 Connection Established");
       expect(result.body).toBe(`host=${authority}`);
       expect(origin.hits).toEqual(["/tunnel"]);
+    } finally {
+      proxy.close();
+      origin.server.stop(true);
+    }
+  });
+
+  // 127.0.0.2 refuses connections because the origin only listens on
+  // 127.0.0.1, standing in for an unreachable address such as IPv6 on Vercel.
+  test("falls back to the next address when one is unreachable", async () => {
+    const origin = startOrigin();
+    const proxy = await startBrowserProxy({
+      resolveAddresses: async () => ["127.0.0.2", "127.0.0.1"],
+    });
+    try {
+      const authority = `site.public.test:${origin.server.port}`;
+      const tunnel = await tunnelViaProxy(proxy.url, authority, "/tunnel");
+      const plain = await requestViaProxy(proxy.url, `http://${authority}/plain`);
+
+      expect(tunnel.status).toBe("HTTP/1.1 200 Connection Established");
+      expect(plain.status).toBe(200);
+      expect(origin.hits).toEqual(["/tunnel", "/plain"]);
+    } finally {
+      proxy.close();
+      origin.server.stop(true);
+    }
+  });
+
+  test("reports 502 when no address is reachable", async () => {
+    const origin = startOrigin();
+    const proxy = await startBrowserProxy({
+      resolveAddresses: async () => ["127.0.0.2", "127.0.0.3"],
+    });
+    try {
+      const result = await tunnelViaProxy(proxy.url, `site.public.test:${origin.server.port}`);
+
+      expect(result.status).toBe("HTTP/1.1 502 Bad Gateway");
+      expect(origin.hits).toEqual([]);
     } finally {
       proxy.close();
       origin.server.stop(true);
@@ -158,7 +195,7 @@ describe("browser proxy", () => {
   test("keeps serving after a browser resets a tunnel during DNS resolution", async () => {
     const origin = startOrigin();
     const proxy = await startBrowserProxy({
-      resolveAddress: async (url) => {
+      resolveAddresses: async (url) => {
         await new Promise((resolve) => setTimeout(resolve, 50));
         return resolveTestHosts(url);
       },
@@ -183,7 +220,7 @@ describe("browser proxy", () => {
 
   test("close() ends open tunnels", async () => {
     const origin = startOrigin();
-    const proxy = await startBrowserProxy({ resolveAddress: resolveTestHosts });
+    const proxy = await startBrowserProxy({ resolveAddresses: resolveTestHosts });
     try {
       const socket = net.connect(proxyPort(proxy.url), "127.0.0.1");
       const closed = new Promise<void>((resolve) => socket.once("close", () => resolve()));
@@ -243,14 +280,14 @@ describe("browser proxy in Chromium", () => {
       // The page host stands in for a public site; internal.test resolves to
       // 127.0.0.1 and goes through the real validation.
       const proxy = await startBrowserProxy({
-        resolveAddress: async (url) =>
+        resolveAddresses: async (url) =>
           new URL(url).hostname === "page.public.test"
-            ? "127.0.0.1"
+            ? ["127.0.0.1"]
             : (
                 await resolveSafeHttpUrl(url, {
                   lookupImpl: async () => [{ address: "127.0.0.1" }],
                 })
-              ).addresses[0],
+              ).addresses,
       });
       const browser = await puppeteer.launch({
         executablePath: await Chromium.executablePath(),
