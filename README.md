@@ -99,12 +99,12 @@ The query strings are:
 Example:
 
 ```
-https://fiimage.vercel.app/capture?s=1280x720&url=https://github.com/feri-irawan/fiimage
+https://fiimage.vercel.app/capture?s=800x600&url=https://example.com
 ```
 
 Output:
 
-![Captured fiimage web page](https://fiimage.vercel.app/capture?s=1280x720&url=https://github.com/feri-irawan/fiimage)
+![Captured example.com web page](https://fiimage.vercel.app/capture?s=800x600&url=https://example.com)
 
 ## Create an Open Graph Image (og:image)
 
