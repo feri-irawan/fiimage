@@ -183,7 +183,13 @@ export const resolveSafeHttpUrl = async (
     throw new UnsafeHttpUrlError("Private network URLs are not allowed.");
   }
 
-  return { url, addresses: addresses.map(({ address }) => address) };
+  // Prefer IPv4: serverless hosts such as Vercel often have no IPv6 egress,
+  // so a dual-stack site whose first answer is IPv6 would otherwise fail.
+  // Callers fall back through the rest, so IPv6-only hosts still work.
+  const ordered = addresses
+    .map(({ address }) => address)
+    .sort((left, right) => isIP(left) - isIP(right));
+  return { url, addresses: ordered };
 };
 
 /** Reject URLs that resolve to local, private, or otherwise non-public networks. */
