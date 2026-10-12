@@ -2,5 +2,14 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "description": "fflate is a direct dependency only so Vercel traces the copy Satori loads at runtime. It must match the exact version Satori depends on, so bump it by hand together with Satori.",
+      "matchPackageNames": [
+        "fflate"
+      ],
+      "enabled": false
+    }
   ]
 }
