@@ -24,7 +24,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@types/bun": "1.4.2",
+    "@types/bun": "1.4.3",
     "@types/express": "^5.0.6",
     "@types/inline-css": "^3.0.4",
     "@types/node": "^26.5.1",
