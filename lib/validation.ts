@@ -124,3 +124,28 @@ export type Fit = (typeof FITS)[number];
  * center, `contain` fits inside. Sizes with `?` always keep the aspect ratio.
  */
 export const fitSchema = z.enum(FITS, { error: "`fit` invalid." }).default("fill");
+
+/**
+ * An on/off flag: `1`, `true`, or the bare name (`?fullPage`) turn it on;
+ * `0`, `false`, or leaving it out keep it off.
+ */
+const flagSchema = (name: string) =>
+  z
+    .enum(["", "1", "true", "0", "false"], { error: `\`${name}\` invalid.` })
+    .default("0")
+    .transform((value) => value === "" || value === "1" || value === "true");
+
+export const fullPageSchema = flagSchema("fullPage");
+export const darkSchema = flagSchema("dark");
+
+export const MAX_CAPTURE_DELAY_MS = 10_000;
+
+const invalidDelay = { error: "`delay` invalid." };
+
+/** Extra milliseconds to wait before a capture, from 0 to 10000. */
+export const captureDelaySchema = z
+  .string(invalidDelay)
+  .regex(/^\d{1,5}$/, invalidDelay)
+  .default("0")
+  .transform(Number)
+  .pipe(z.number().int().max(MAX_CAPTURE_DELAY_MS, invalidDelay));

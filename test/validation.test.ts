@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
+  captureDelaySchema,
   captureSizeSchema,
+  darkSchema,
+  fullPageSchema,
   fitSchema,
   httpUrlSchema,
   outputFormatSchema,
@@ -78,5 +81,30 @@ describe("query validation", () => {
     expect(fitSchema.parse("cover")).toBe("cover");
     expect(fitSchema.parse("contain")).toBe("contain");
     expect(fitSchema.safeParse("stretch").success).toBe(false);
+  });
+
+  test.each([
+    [undefined, false],
+    ["", true],
+    ["1", true],
+    ["true", true],
+    ["0", false],
+    ["false", false],
+  ] as const)("reads capture flag %p as %p", (value, expected) => {
+    expect(fullPageSchema.parse(value)).toBe(expected);
+    expect(darkSchema.parse(value)).toBe(expected);
+  });
+
+  test("rejects unknown flag values", () => {
+    expect(fullPageSchema.safeParse("yes").success).toBe(false);
+  });
+
+  test("accepts capture delays from 0 to 10000 ms", () => {
+    expect(captureDelaySchema.parse(undefined)).toBe(0);
+    expect(captureDelaySchema.parse("2500")).toBe(2_500);
+    expect(captureDelaySchema.parse("10000")).toBe(10_000);
+    for (const value of ["10001", "-1", "1.5", "abc"]) {
+      expect(captureDelaySchema.safeParse(value).success).toBe(false);
+    }
   });
 });

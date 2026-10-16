@@ -12,7 +12,14 @@ import {
   sendGeneratedImage,
   sendTooManyRequests,
 } from "./response";
-import { captureSizeSchema, httpUrlSchema } from "./validation";
+import {
+  captureDelaySchema,
+  captureSizeSchema,
+  darkSchema,
+  fullPageSchema,
+  httpUrlSchema,
+  MAX_DIMENSION,
+} from "./validation";
 import {
   PayloadTooLargeError,
   RequestTimeoutError,
@@ -21,7 +28,13 @@ import {
 import { generationGate } from "./concurrency";
 import { getBrowserProxyArgs, startBrowserProxy } from "./browser-proxy";
 
-const querySchema = z.object({ url: httpUrlSchema, s: captureSizeSchema });
+const querySchema = z.object({
+  url: httpUrlSchema,
+  s: captureSizeSchema,
+  fullPage: fullPageSchema,
+  delay: captureDelaySchema,
+  dark: darkSchema,
+});
 // Content-heavy pages (GitHub, news sites) make well over 100 requests; a low
 // cap drops their later images and icons. The byte budget and deadlines below
 // still bound the total work.
@@ -123,6 +136,92 @@ export const waitForPageToSettle = async (page: Page, deadlineAt: number) => {
   }
 };
 
+// Full-page captures scroll through the page first so lazy-loaded images and
+// sections start loading, a viewport at a time, for at most this long.
+const SCROLL_BUDGET_MS = 4_000;
+const SCROLL_STEP_DELAY_MS = 100;
+
+/** Scroll down to the capture height a viewport at a time, then back up. */
+const scrollThroughPage = async (page: Page, deadlineAt: number) => {
+  const budgetMs = Math.min(SCROLL_BUDGET_MS, Math.max(0, deadlineAt - Date.now()));
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      // Keep this callback synchronous; see waitForPageToSettle.
+      page
+        .evaluate(
+          (maxHeight, stepDelayMs, scrollBudgetMs) =>
+            new Promise<void>((resolve) => {
+              const startedAt = Date.now();
+              const step = () => {
+                const end = Math.min(document.documentElement.scrollHeight, maxHeight);
+                const next = window.scrollY + window.innerHeight;
+                if (next >= end || Date.now() - startedAt > scrollBudgetMs) {
+                  window.scrollTo(0, 0);
+                  resolve();
+                  return;
+                }
+                window.scrollTo(0, next);
+                setTimeout(step, stepDelayMs);
+              };
+              step();
+            }),
+          MAX_DIMENSION,
+          SCROLL_STEP_DELAY_MS,
+          budgetMs
+        )
+        .catch(() => undefined),
+      // A page that blocks its timers must not hold up the capture.
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, budgetMs + 1_000);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+};
+
+export type ScreenshotOptions = {
+  /** Capture the whole page height (up to MAX_DIMENSION), not the viewport. */
+  fullPage: boolean;
+  /** Extra milliseconds to wait after the page settles. */
+  delay: number;
+};
+
+/**
+ * Get a loaded page ready and return its screenshot settings: scroll through
+ * full pages so lazy content loads, wait for the page to settle, then wait
+ * any extra delay the caller asked for.
+ */
+export const preparePageForScreenshot = async (
+  page: Page,
+  { fullPage, delay }: ScreenshotOptions,
+  deadlineAt: number
+) => {
+  if (fullPage) await scrollThroughPage(page, deadlineAt);
+  await waitForPageToSettle(page, deadlineAt);
+  if (delay > 0) {
+    await new Promise((resolve) =>
+      setTimeout(resolve, Math.min(delay, Math.max(0, deadlineAt - Date.now())))
+    );
+  }
+  if (!fullPage) return { type: "png" } as const;
+
+  const height = await page.evaluate(() =>
+    Math.max(document.documentElement.scrollHeight, document.body?.scrollHeight ?? 0)
+  );
+  return {
+    type: "png",
+    captureBeyondViewport: true,
+    clip: {
+      x: 0,
+      y: 0,
+      width: page.viewport()?.width ?? 0,
+      height: Math.min(Math.max(1, height), MAX_DIMENSION),
+    },
+  } as const;
+};
+
 /** Map Puppeteer navigation failures to client-facing errors. */
 export const toNavigationError = (error: unknown) => {
   if (error instanceof TimeoutError) {
@@ -144,7 +243,7 @@ export const toNavigationError = (error: unknown) => {
 export const capture = async (req: Request, res: Response) => {
   try {
     // Get the query string
-    const { url, s } = querySchema.parse(req.query);
+    const query = querySchema.parse(req.query);
     const release = generationGate.tryAcquire();
     if (!release) {
       sendTooManyRequests(res);
@@ -152,10 +251,10 @@ export const capture = async (req: Request, res: Response) => {
     }
 
     try {
-      await assertSafeHttpUrl(url);
+      await assertSafeHttpUrl(query.url);
 
       // Generate the image
-      const image = await captureTheWeb({ url, s });
+      const image = await captureTheWeb(query);
 
       // Send the response
       sendGeneratedImage(res, "image/png", image);
@@ -190,7 +289,7 @@ const captureTheWeb = async (query: z.infer<typeof querySchema>) => {
 };
 
 const captureThroughProxy = async (
-  { url, s }: z.infer<typeof querySchema>,
+  { url, s, fullPage, delay, dark }: z.infer<typeof querySchema>,
   proxyUrl: string
 ) => {
   const deadlineAt = Date.now() + CAPTURE_TIMEOUT_MS;
@@ -365,6 +464,14 @@ const captureThroughProxy = async (
       remainingTime(deadlineAt),
       "Browser viewport setup timed out."
     );
+    if (dark) {
+      // Before navigation, so pages that read the scheme on load see it.
+      await withTimeout(
+        page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: "dark" }]),
+        remainingTime(deadlineAt),
+        "Browser color scheme setup timed out."
+      );
+    }
     try {
       await withTimeout(
         page.goto(url, {
@@ -380,15 +487,18 @@ const captureThroughProxy = async (
     }
     if (pageBytesExceeded) throw new PayloadTooLargeError("Remote page is too large.");
 
-    await withTimeout(
-      Promise.race([waitForPageToSettle(page, deadlineAt), pageBudget]),
+    const screenshotOptions = await withTimeout(
+      Promise.race([
+        preparePageForScreenshot(page, { fullPage, delay }, deadlineAt),
+        pageBudget,
+      ]),
       Math.max(1, deadlineAt - Date.now()),
       "Page readiness timed out."
     );
     if (pageBytesExceeded) throw new PayloadTooLargeError("Remote page is too large.");
 
     const screenshot = await withTimeout(
-      page.screenshot({ type: "png" }),
+      page.screenshot(screenshotOptions),
       Math.max(1, deadlineAt - Date.now()),
       "Screenshot timed out."
     );
