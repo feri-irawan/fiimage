@@ -8,6 +8,12 @@ export const httpUrlSchema = z
   .url({ protocol: /^https?$/, error: invalidUrl })
   .max(2048, { error: "`url` too long." });
 
+/** An optional HTTP(S) image URL, such as `image` for the Photo template. */
+export const imageUrlSchema = z
+  .url({ protocol: /^https?$/, error: "`image` invalid." })
+  .max(2048, { error: "`image` too long." })
+  .optional();
+
 export const MAX_DIMENSION = 4096;
 
 const invalidSize = { error: "`size` invalid." };
