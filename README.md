@@ -127,7 +127,7 @@ Output:
 GET /capture
 ```
 
-Capture a public web page as a PNG image. The `s` parameter controls the browser viewport size and defaults to `640x480`.
+Capture a public web page as an image, JPEG by default. The `s` parameter controls the browser viewport size and defaults to `640x480`.
 
 The query strings are:
 
@@ -138,6 +138,8 @@ The query strings are:
 | `fullPage` (optional) | Capture the whole page instead of only the viewport: `fullPage=1`. Up to 4096 pixels high |
 | `delay` (optional)    | Extra time to wait before capturing, in milliseconds: `delay=2000`. Up to `10000`         |
 | `dark` (optional)     | Ask the page for its dark mode (`prefers-color-scheme: dark`): `dark=1`                   |
+| `f` (optional)        | The output format: `jpeg` (default, also `jpg`), `png` (lossless), or `webp` (smallest)   |
+| `q` (optional)        | The quality for `jpeg` and `webp`, from `1` to `100`. Default: `85`                       |
 
 Example:
 
@@ -161,7 +163,11 @@ They can be combined:
 https://fiimage.vercel.app/capture?s=1280x720&fullPage=1&dark=1&url=https://nodejs.org/en
 ```
 
-Very long or image-heavy full pages can exceed the 4 MB response limit; a smaller `s` width helps.
+Use `f=png` for lossless screenshots with perfectly sharp text, or `f=webp` for the smallest files. Very long or image-heavy full pages can exceed the 4 MB response limit; `f=webp` or a smaller `s` width helps.
+
+```
+https://fiimage.vercel.app/capture?s=1280x720&fullPage=1&f=webp&url=https://nodejs.org/en
+```
 
 ## Create an Open Graph Image (og:image)
 

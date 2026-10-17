@@ -107,4 +107,5 @@ describe("query validation", () => {
       expect(captureDelaySchema.safeParse(value).success).toBe(false);
     }
   });
+
 });

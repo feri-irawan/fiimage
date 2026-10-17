@@ -104,11 +104,14 @@ describe("waiting for a page to settle", () => {
     "waits for content that scripts fetch after load",
     async () => {
       await withPage(
+        // The request starts right after load; /late answers 800 ms later.
+        // Starting it later would race the 500 ms network-idle window on a
+        // busy machine instead of testing the wait.
         `<script>
-          addEventListener("load", () => setTimeout(() =>
+          addEventListener("load", () =>
             fetch("/late").then((r) => r.text()).then((text) => {
               document.body.dataset.late = text;
-            }), 300));
+            }));
         </script>`,
         async (page, origin) => {
           await page.goto(origin, { waitUntil: "load" });
@@ -250,5 +253,63 @@ describe("preparing a page for its screenshot", () => {
       });
     },
     30_000
+  );
+});
+
+describe("capture output formats", () => {
+  // A busy page, so lossy formats and quality make a visible difference.
+  const busyPage = `<body style="margin:0">${Array.from(
+    { length: 40 },
+    (_, index) =>
+      `<div style="height:20px;background:linear-gradient(90deg,hsl(${index * 9},80%,50%),hsl(${index * 9 + 120},80%,40%))">row ${index}</div>`
+  ).join("")}</body>`;
+
+  test.skipIf(process.platform !== "linux")(
+    "captures PNG, JPEG, and WebP, with quality for the lossy formats",
+    async () => {
+      await withPage(busyPage, async (page, origin) => {
+        await page.setViewport({ width: 400, height: 300 });
+        await page.goto(origin, { waitUntil: "load" });
+
+        const shoot = async (format: "png" | "jpeg" | "webp", quality?: number) => {
+          const options = await preparePageForScreenshot(
+            page,
+            { fullPage: false, delay: 0, format, quality },
+            Date.now() + 20_000
+          );
+          return Buffer.from(await page.screenshot(options));
+        };
+
+        for (const format of ["png", "jpeg", "webp"] as const) {
+          const metadata = await new Bun.Image(await shoot(format)).metadata();
+          expect([metadata.format, metadata.width, metadata.height]).toEqual([format, 400, 300]);
+        }
+        for (const format of ["jpeg", "webp"] as const) {
+          const [low, high] = [await shoot(format, 10), await shoot(format, 95)];
+          expect(low.length).toBeLessThan(high.length);
+        }
+      });
+    },
+    60_000
+  );
+
+  test.skipIf(process.platform !== "linux")(
+    "captures full pages as WebP",
+    async () => {
+      await withPage(busyPage, async (page, origin) => {
+        await page.setViewport({ width: 400, height: 300 });
+        await page.goto(origin, { waitUntil: "load" });
+
+        const options = await preparePageForScreenshot(
+          page,
+          { fullPage: true, delay: 0, format: "webp", quality: 80 },
+          Date.now() + 20_000
+        );
+        const metadata = await new Bun.Image(await page.screenshot(options)).metadata();
+
+        expect([metadata.format, metadata.width, metadata.height]).toEqual(["webp", 400, 800]);
+      });
+    },
+    60_000
   );
 });

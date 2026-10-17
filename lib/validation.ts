@@ -100,7 +100,13 @@ export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
 
 const invalidFormat = { error: "`f` invalid." };
 
-/** Output format; `jpg` is accepted as an alias for `jpeg`. */
+export const OUTPUT_CONTENT_TYPES: Record<OutputFormat, string> = {
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
+
+/** Output format, JPEG by default; `jpg` is accepted as an alias for `jpeg`. */
 export const outputFormatSchema = z
   .enum([...OUTPUT_FORMATS, "jpg"], invalidFormat)
   .default("jpeg")

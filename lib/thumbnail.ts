@@ -4,6 +4,7 @@ import { sendGeneratedImage, sendTooManyRequests } from "./response";
 import {
   fitSchema,
   httpUrlSchema,
+  OUTPUT_CONTENT_TYPES,
   outputFormatSchema,
   qualitySchema,
   thumbnailSizeSchema,
@@ -21,11 +22,6 @@ const querySchema = z.object({
   fit: fitSchema,
 });
 
-const CONTENT_TYPES = {
-  jpeg: "image/jpeg",
-  png: "image/png",
-  webp: "image/webp",
-} as const;
 
 /** Generate the thumbnail */
 export const generateThumbnail = async (req: Request, res: Response) => {
@@ -49,7 +45,7 @@ export const generateThumbnail = async (req: Request, res: Response) => {
         output: { format: f, quality: q, fit },
       });
 
-      sendGeneratedImage(res, CONTENT_TYPES[f], image);
+      sendGeneratedImage(res, OUTPUT_CONTENT_TYPES[f], image);
     } finally {
       release();
     }

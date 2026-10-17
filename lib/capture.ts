@@ -19,6 +19,10 @@ import {
   fullPageSchema,
   httpUrlSchema,
   MAX_DIMENSION,
+  OUTPUT_CONTENT_TYPES,
+  OutputFormat,
+  outputFormatSchema,
+  qualitySchema,
 } from "./validation";
 import {
   PayloadTooLargeError,
@@ -34,6 +38,9 @@ const querySchema = z.object({
   fullPage: fullPageSchema,
   delay: captureDelaySchema,
   dark: darkSchema,
+  // JPEG by default: about half the size of PNG for a typical page.
+  f: outputFormatSchema,
+  q: qualitySchema,
 });
 // Content-heavy pages (GitHub, news sites) make well over 100 requests; a low
 // cap drops their later images and icons. The byte budget and deadlines below
@@ -186,6 +193,10 @@ export type ScreenshotOptions = {
   fullPage: boolean;
   /** Extra milliseconds to wait after the page settles. */
   delay: number;
+  /** Image format; PNG when not given. The route always passes one. */
+  format?: OutputFormat;
+  /** JPEG and WebP quality from 1 to 100. */
+  quality?: number;
 };
 
 /**
@@ -195,7 +206,7 @@ export type ScreenshotOptions = {
  */
 export const preparePageForScreenshot = async (
   page: Page,
-  { fullPage, delay }: ScreenshotOptions,
+  { fullPage, delay, format = "png", quality = 85 }: ScreenshotOptions,
   deadlineAt: number
 ) => {
   if (fullPage) await scrollThroughPage(page, deadlineAt);
@@ -205,13 +216,15 @@ export const preparePageForScreenshot = async (
       setTimeout(resolve, Math.min(delay, Math.max(0, deadlineAt - Date.now())))
     );
   }
-  if (!fullPage) return { type: "png" } as const;
+  // Puppeteer rejects a quality for PNG, which is lossless.
+  const encoding = format === "png" ? { type: format } : { type: format, quality };
+  if (!fullPage) return encoding;
 
   const height = await page.evaluate(() =>
     Math.max(document.documentElement.scrollHeight, document.body?.scrollHeight ?? 0)
   );
   return {
-    type: "png",
+    ...encoding,
     captureBeyondViewport: true,
     clip: {
       x: 0,
@@ -219,7 +232,7 @@ export const preparePageForScreenshot = async (
       width: page.viewport()?.width ?? 0,
       height: Math.min(Math.max(1, height), MAX_DIMENSION),
     },
-  } as const;
+  };
 };
 
 /** Map Puppeteer navigation failures to client-facing errors. */
@@ -257,7 +270,7 @@ export const capture = async (req: Request, res: Response) => {
       const image = await captureTheWeb(query);
 
       // Send the response
-      sendGeneratedImage(res, "image/png", image);
+      sendGeneratedImage(res, OUTPUT_CONTENT_TYPES[query.f], image);
     } finally {
       release();
     }
@@ -289,7 +302,7 @@ const captureTheWeb = async (query: z.infer<typeof querySchema>) => {
 };
 
 const captureThroughProxy = async (
-  { url, s, fullPage, delay, dark }: z.infer<typeof querySchema>,
+  { url, s, fullPage, delay, dark, f, q }: z.infer<typeof querySchema>,
   proxyUrl: string
 ) => {
   const deadlineAt = Date.now() + CAPTURE_TIMEOUT_MS;
@@ -489,7 +502,11 @@ const captureThroughProxy = async (
 
     const screenshotOptions = await withTimeout(
       Promise.race([
-        preparePageForScreenshot(page, { fullPage, delay }, deadlineAt),
+        preparePageForScreenshot(
+          page,
+          { fullPage, delay, format: f, quality: q },
+          deadlineAt
+        ),
         pageBudget,
       ]),
       Math.max(1, deadlineAt - Date.now()),
