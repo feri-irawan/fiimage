@@ -1,0 +1,93 @@
+<style>
+  * {
+    font-family: "Inter", sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    color: #e2e8f0;
+  }
+
+  .canvas {
+    width: 600px;
+    height: 315px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  }
+
+  .accent {
+    display: flex;
+    height: 6px;
+    background: linear-gradient(90deg, #6366f1 0%, #22d3ee 100%);
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+    padding: 1.75rem 2rem 1.5rem;
+  }
+
+  .text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  #title {
+    display: block;
+    color: #ffffff;
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.2;
+    line-clamp: 3;
+  }
+
+  #description {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    line-clamp: 2;
+  }
+
+  .footer {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  #icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    object-fit: cover;
+  }
+
+  #url {
+    color: #22d3ee;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 480px;
+  }
+</style>
+
+<body>
+  <div class="canvas">
+    <div class="accent"></div>
+    <div class="content">
+      <div class="text">
+        <h1 id="title">Lorem ipsum dolor sit amet consectetur adipisicing elit</h1>
+        <p id="description">
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Earum
+          doloremque accusantium odio.
+        </p>
+      </div>
+      <!-- No whitespace between these tags: Satori would render it as text. -->
+      <div class="footer"><img id="icon" width="28" height="28" src="https://dummyimage.com/150x150/000/fff" /><p id="url">https://fiimage.vercel.app</p></div>
+    </div>
+  </div>
+</body>

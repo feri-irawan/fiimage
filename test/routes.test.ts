@@ -67,7 +67,7 @@ describe("route contracts", () => {
 
     await createOGImage(
       {
-        query: { url: "https://example.com", template: "2" },
+        query: { url: "https://example.com", template: "9" },
       } as unknown as Request,
       result.response
     );

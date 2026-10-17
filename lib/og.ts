@@ -59,7 +59,7 @@ export const createOGImage = async (req: Request, res: Response) => {
 /**
  * Query string Validation
  */
-const templateSchema = z.enum(["0", "1"]).default("0");
+const templateSchema = z.enum(["0", "1", "2", "3"]).default("0");
 const querySchema = z.object({
   url: httpUrlSchema,
   template: templateSchema,

@@ -177,10 +177,10 @@ GET /og
 
 The query strings are:
 
-| Name                  | Description                                                            |
-| --------------------- | ---------------------------------------------------------------------- |
-| `url`                 | Your web URL (must start with `https://` or `http://`)                 |
-| `template` (optional) | The template (for now you can choose `0` or `1`), default: `0`         |
+| Name                  | Description                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------------- |
+| `url`                 | Your web URL (must start with `https://` or `http://`)                                        |
+| `template` (optional) | The template: `0` (default), `1`, `2`, or `3`. See [the templates](#templates) below          |
 
 The image content is read from your page:
 
@@ -201,11 +201,21 @@ Output:
 
 ![Open Graph Image](https://fiimage.vercel.app/og?url=https://github.com/feri-irawan/fiimage)
 
-Using template: `1`
+### Templates
 
-![Open Graph Image](https://fiimage.vercel.app/og?template=1&url=https://github.com/feri-irawan/fiimage)
+`0` (default): light and centered, as in the example above
 
-> Stay tuned for the new template :)
+`1`: light, with the icon beside the title
+
+![Open Graph Image, template 1](https://fiimage.vercel.app/og?template=1&url=https://github.com/feri-irawan/fiimage)
+
+`2`: dark, with an accent bar
+
+![Open Graph Image, template 2](https://fiimage.vercel.app/og?template=2&url=https://github.com/feri-irawan/fiimage)
+
+`3`: a white card on a gradient
+
+![Open Graph Image, template 3](https://fiimage.vercel.app/og?template=3&url=https://github.com/feri-irawan/fiimage)
 
 ## Contribution
 
