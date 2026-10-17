@@ -180,7 +180,8 @@ The query strings are:
 | Name                  | Description                                                                                   |
 | --------------------- | --------------------------------------------------------------------------------------------- |
 | `url`                 | Your web URL (must start with `https://` or `http://`)                                        |
-| `template` (optional) | The template, from `0` (default) to `7`. See [the templates](#templates) below                |
+| `template` (optional) | The template, from `0` (default) to `8`. See [the templates](#templates) below                |
+| `image` (optional)    | A photo for the [Photo template](#photo-template), instead of one from your page              |
 
 The image content is read from your page:
 
@@ -190,6 +191,7 @@ The image content is read from your page:
 | Description | `og:description`, `twitter:description`, `<meta name="description">`                   |
 | Icon        | `apple-touch-icon`, then `icon` links (PNG, JPEG, WebP, or GIF; ICO and SVG are skipped) |
 | URL         | The `url` you pass, without its query string or fragment                               |
+| Photo       | Template `8` only. See [the Photo template](#photo-template)                           |
 
 Example:
 
@@ -235,6 +237,24 @@ Each image below is this repository's page, rendered live with `template=N`. Wit
     <td align="center"><code>7</code> Spine</td>
   </tr>
 </table>
+
+### Photo template
+
+`template=8` fills the image with a photo and sets the title over it. fiimage uses the first of these photos that loads:
+
+1. The `image` you pass
+2. Your page's `og:image` or `twitter:image`
+3. The first large image in your page's `<article>` or `<main>`, then anywhere on the page
+
+Images smaller than 200 pixels, SVGs, and Open Graph images from fiimage itself are skipped. Without a photo, the background stays dark. This template takes a little longer than the others, because fiimage downloads the photo too.
+
+Example:
+
+```
+https://fiimage.vercel.app/og?template=8&url=https://github.com/feri-irawan/fiimage&image=https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=1200
+```
+
+<img src="https://fiimage.vercel.app/og?template=8&amp;url=https://github.com/feri-irawan/fiimage&amp;image=https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=1200" alt="Template 8, Photo" width="420">
 
 ## Contribution
 

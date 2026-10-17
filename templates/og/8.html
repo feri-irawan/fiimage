@@ -1,0 +1,129 @@
+<style>
+  /* Photo: the page's own image fills the card, with the title over a dark
+     fade at the bottom. Without an image, the card stays dark. */
+  * {
+    font-family: "Instrument Sans", "Inter", sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    color: #ffffff;
+  }
+
+  .canvas {
+    width: 600px;
+    height: 315px;
+    overflow: hidden;
+    display: flex;
+    position: relative;
+    background: #1b1e24;
+  }
+
+  #photo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    width: 600px;
+    height: 315px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .shade {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    width: 600px;
+    height: 315px;
+    /* One line: Satori cannot parse a gradient split across lines. */
+    background: linear-gradient(180deg, rgba(8, 10, 14, 0.6) 0%, rgba(8, 10, 14, 0) 28%, rgba(8, 10, 14, 0.15) 45%, rgba(8, 10, 14, 0.9) 100%);
+  }
+
+  .content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 600px;
+    height: 315px;
+    padding: 26px 36px 30px;
+  }
+
+  .address {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    object-fit: cover;
+  }
+
+  .where {
+    display: flex;
+    font-size: 14px;
+    max-width: 480px;
+    overflow: hidden;
+  }
+
+  #host {
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  #path {
+    color: rgba(255, 255, 255, 0.75);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  .text {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #title {
+    display: block;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.8px;
+    line-clamp: 3;
+  }
+
+  #description {
+    display: block;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 15px;
+    line-height: 1.4;
+    line-clamp: 2;
+  }
+</style>
+
+<body>
+  <div class="canvas">
+    <div id="photo"></div>
+    <div class="shade"></div>
+    <div class="content">
+      <div class="address">
+        <img id="icon" width="20" height="20" src="https://dummyimage.com/150x150/000/fff" />
+        <div class="where">
+          <span id="host">fiimage.vercel.app</span>
+          <span id="path">/og</span>
+        </div>
+      </div>
+      <div class="text">
+        <h1 id="title">Lorem ipsum dolor sit amet consectetur adipisicing elit</h1>
+        <p id="description">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      </div>
+    </div>
+  </div>
+</body>

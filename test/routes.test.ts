@@ -76,6 +76,20 @@ describe("route contracts", () => {
     expect(result.payload).toHaveProperty("fieldErrors");
   });
 
+  test("OG rejects an image that is not an HTTP(S) URL with 400", async () => {
+    const result = createResponse();
+
+    await createOGImage(
+      {
+        query: { url: "https://example.com", template: "8", image: "file:///etc/passwd" },
+      } as unknown as Request,
+      result.response
+    );
+
+    expect(result.statusCode).toBe(400);
+    expect(result.payload).toHaveProperty("fieldErrors.image");
+  });
+
   test.each([
     ["thumbnail", generateThumbnail],
     ["capture", capture],

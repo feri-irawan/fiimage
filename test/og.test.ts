@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
   decodeHtml,
+  FIIMAGE_FETCH_HEADER,
   getAddressParts,
+  getCoverSize,
   getPageMetadata,
   parsePageMetadata,
   renderOGImage,
@@ -15,6 +17,12 @@ const latin1Cafe = (before: string, after = "") =>
 const png = Uint8Array.fromBase64(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
 );
+// A photo-sized JPEG, scaled up from the 1x1 PNG.
+const photoJpeg = new Bun.Image(png)
+  .resize(1600, 900)
+  .jpeg()
+  .buffer()
+  .then((buffer) => new Uint8Array(buffer));
 
 describe("HTML decoding", () => {
   test("uses the charset from the Content-Type header", () => {
@@ -111,6 +119,52 @@ describe("page metadata parsing", () => {
       "https://example.com/icon-64.png",
     ]);
   });
+
+  test("orders photo candidates and skips SVGs, fiimage images, and small images", () => {
+    const { photoUrls } = parsePageMetadata(
+      `<meta property="og:image" content="https://fiimage.vercel.app/og?url=https://example.com">
+       <meta property="og:image" content="/cover.svg">
+       <meta name="twitter:image" content="/cover.jpg">
+       <img src="/logo.png" width="64" height="64">
+       <img src="/outside.jpg">
+       <article><img src="data:image/gif;base64,R0lGOD" data-src="/lazy.jpg"></article>`,
+      pageUrl
+    );
+
+    expect(photoUrls).toEqual([
+      "https://example.com/cover.jpg",
+      "https://example.com/lazy.jpg",
+      "https://example.com/outside.jpg",
+    ]);
+  });
+
+  test("takes the first srcset candidate and caps photo candidates", () => {
+    const { photoUrls } = parsePageMetadata(
+      `<main><img srcset="/a-480.jpg 480w, /a-960.jpg 960w"></main>
+       <img src="/b.jpg"><img src="/c.jpg"><img src="/d.jpg">`,
+      pageUrl
+    );
+
+    expect(photoUrls).toEqual([
+      "https://example.com/a-480.jpg",
+      "https://example.com/b.jpg",
+      "https://example.com/c.jpg",
+    ]);
+  });
+});
+
+describe("photo sizing", () => {
+  test.each([
+    [4000, 3000, 1200, 900],
+    [5000, 1000, 3150, 630],
+    [2400, 1260, 1200, 630],
+    [800, 1400, 800, 1400],
+  ])("scales %ix%i to %ix%i to cover 1200x630, never up", (width, height, coverWidth, coverHeight) => {
+    expect(getCoverSize(width, height, { width: 1200, height: 630 })).toEqual({
+      width: coverWidth,
+      height: coverHeight,
+    });
+  });
 });
 
 describe("page metadata fetching", () => {
@@ -146,6 +200,61 @@ describe("page metadata fetching", () => {
     ]);
   });
 
+  test("fetches a photo only when asked, trying an explicit photo first", async () => {
+    const requests: { path: string; marked: boolean }[] = [];
+    const fetchImpl = (async (url: string, init?: RequestInit) => {
+      const { pathname } = new URL(url);
+      requests.push({ path: pathname, marked: new Headers(init?.headers).has(FIIMAGE_FETCH_HEADER) });
+      if (pathname === "/explicit.jpg") return new Response(null, { status: 404 });
+      if (pathname === "/cover.jpg") {
+        return new Response(await photoJpeg, { headers: { "content-type": "image/jpeg" } });
+      }
+      return new Response('<title>Post</title><meta property="og:image" content="/cover.jpg">', {
+        headers: { "content-type": "text/html" },
+      });
+    }) as unknown as typeof fetch;
+
+    const plain = await getPageMetadata("https://8.8.8.8/post", Date.now() + 10_000, fetchImpl);
+    expect(plain.photo).toBeUndefined();
+    expect(requests.map(({ path }) => path)).toEqual(["/post"]);
+
+    requests.length = 0;
+    const metadata = await getPageMetadata(
+      "https://8.8.8.8/post",
+      Date.now() + 10_000,
+      fetchImpl,
+      { withPhoto: true, photoUrl: "https://8.8.8.8/explicit.jpg" }
+    );
+
+    expect(metadata.photo?.startsWith("data:image/jpeg;base64,")).toBe(true);
+    const { width, height } = await new Bun.Image(
+      Buffer.from(metadata.photo!.split(",")[1], "base64")
+    ).metadata();
+    expect([width, height]).toEqual([1200, 675]);
+    expect(requests).toEqual([
+      { path: "/post", marked: false },
+      { path: "/explicit.jpg", marked: true },
+      { path: "/cover.jpg", marked: true },
+    ]);
+  });
+
+  test("skips icons when asked", async () => {
+    const requested: string[] = [];
+    const fetchImpl = (async (url: string) => {
+      requested.push(new URL(url).pathname);
+      return new Response('<link rel="icon" href="/icon.png"><title>Home</title>', {
+        headers: { "content-type": "text/html" },
+      });
+    }) as unknown as typeof fetch;
+
+    const metadata = await getPageMetadata("https://8.8.8.8/", Date.now() + 10_000, fetchImpl, {
+      withIcon: false,
+    });
+
+    expect(metadata.icon).toBeUndefined();
+    expect(requested).toEqual(["/"]);
+  });
+
   test("shows a bare origin without a trailing slash", async () => {
     const fetchImpl = (async () =>
       new Response("<title>Home</title>", {
@@ -172,20 +281,23 @@ describe("page address parts", () => {
 
 describe("Open Graph rendering", () => {
   const icon = `data:image/png;base64,${Buffer.from(png).toString("base64")}`;
-  const templates = ["0", "1", "2", "3", "4", "5", "6", "7"] as const;
+  const templates = ["0", "1", "2", "3", "4", "5", "6", "7", "8"] as const;
 
   test.each(
     templates.flatMap((template) => [
-      [template, undefined],
-      [template, icon],
+      [template, false],
+      [template, true],
     ])
-  )("renders template %s (icon: %p) as a 1200x630 PNG", async (template, iconUrl) => {
+  )("renders template %s (with images: %p) as a 1200x630 PNG", async (template, withImages) => {
     const output = await renderOGImage(
       {
         title: "Café crème: a fairly long title that should wrap onto two lines",
         description: "A description for the Open Graph image.",
         url: "https://example.com/blog/post",
-        icon: iconUrl ? icon : undefined,
+        icon: withImages ? icon : undefined,
+        photo: withImages
+          ? `data:image/jpeg;base64,${Buffer.from(await photoJpeg).toString("base64")}`
+          : undefined,
       },
       template
     );
