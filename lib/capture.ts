@@ -14,7 +14,6 @@ import {
 } from "./response";
 import {
   captureDelaySchema,
-  captureFormatSchema,
   captureSizeSchema,
   darkSchema,
   fullPageSchema,
@@ -22,6 +21,7 @@ import {
   MAX_DIMENSION,
   OUTPUT_CONTENT_TYPES,
   OutputFormat,
+  outputFormatSchema,
   qualitySchema,
 } from "./validation";
 import {
@@ -38,7 +38,8 @@ const querySchema = z.object({
   fullPage: fullPageSchema,
   delay: captureDelaySchema,
   dark: darkSchema,
-  f: captureFormatSchema,
+  // JPEG by default: about half the size of PNG for a typical page.
+  f: outputFormatSchema,
   q: qualitySchema,
 });
 // Content-heavy pages (GitHub, news sites) make well over 100 requests; a low
@@ -192,7 +193,7 @@ export type ScreenshotOptions = {
   fullPage: boolean;
   /** Extra milliseconds to wait after the page settles. */
   delay: number;
-  /** Image format; PNG by default. */
+  /** Image format; PNG when not given. The route always passes one. */
   format?: OutputFormat;
   /** JPEG and WebP quality from 1 to 100. */
   quality?: number;

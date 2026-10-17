@@ -106,18 +106,11 @@ export const OUTPUT_CONTENT_TYPES: Record<OutputFormat, string> = {
   webp: "image/webp",
 };
 
-/** Output format; `jpg` is accepted as an alias for `jpeg`. */
-const formatSchema = (defaultFormat: OutputFormat) =>
-  z
-    .enum([...OUTPUT_FORMATS, "jpg"], invalidFormat)
-    .default(defaultFormat)
-    .transform((format): OutputFormat => (format === "jpg" ? "jpeg" : format));
-
-/** Format for resized images and video thumbnails; JPEG by default. */
-export const outputFormatSchema = formatSchema("jpeg");
-
-/** Format for page captures; PNG by default. */
-export const captureFormatSchema = formatSchema("png");
+/** Output format, JPEG by default; `jpg` is accepted as an alias for `jpeg`. */
+export const outputFormatSchema = z
+  .enum([...OUTPUT_FORMATS, "jpg"], invalidFormat)
+  .default("jpeg")
+  .transform((format): OutputFormat => (format === "jpg" ? "jpeg" : format));
 
 const invalidQuality = { error: "`q` invalid." };
 
