@@ -248,13 +248,25 @@ Each image below is this repository's page, rendered live with `template=N`. Wit
 
 Images smaller than 200 pixels, SVGs, and Open Graph images from fiimage itself are skipped. Without a photo, the background stays dark. This template takes a little longer than the others, because fiimage downloads the photo too.
 
-Example:
+Examples:
 
 ```
 https://fiimage.vercel.app/og?template=8&url=https://github.com/feri-irawan/fiimage&image=https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=1200
+https://fiimage.vercel.app/og?template=8&url=https://en.wikipedia.org/wiki/Komodo_dragon
 ```
 
-<img src="https://fiimage.vercel.app/og?template=8&amp;url=https://github.com/feri-irawan/fiimage&amp;image=https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=1200" alt="Template 8, Photo" width="420">
+<table>
+  <tr>
+    <td width="50%"><img src="https://fiimage.vercel.app/og?template=8&amp;url=https://github.com/feri-irawan/fiimage&amp;image=https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=1200" alt="Template 8 with a photo passed as image"></td>
+    <td width="50%"><img src="https://fiimage.vercel.app/og?template=8&amp;url=https://en.wikipedia.org/wiki/Komodo_dragon" alt="Template 8 with the photo from a Wikipedia article"></td>
+  </tr>
+  <tr>
+    <td align="center">Your own photo, with <code>image</code></td>
+    <td align="center">The photo found on the page</td>
+  </tr>
+</table>
+
+The second example shows content from the Wikipedia article [Komodo dragon](https://en.wikipedia.org/wiki/Komodo_dragon), under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Its photo comes from Wikimedia Commons, under the license shown on the article's image page.
 
 ## Contribution
 

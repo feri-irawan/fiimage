@@ -5,6 +5,7 @@ import {
   fetchSafeResponse,
   readResponseBody,
   RemoteBodyTooLargeError,
+  USER_AGENT,
 } from "../lib/remote";
 import { UpstreamRequestError } from "../lib/errors";
 
@@ -180,6 +181,23 @@ describe("DNS pinning", () => {
     expect(new Headers(calls[0].init.headers).get("host")).toBe("example.com");
     expect(calls[0].init.tls?.serverName).toBe("example.com");
     expect(response.url).toBe("https://example.com/path?q=1");
+  });
+
+  test("identifies fiimage with a User-Agent unless the caller sets one", async () => {
+    const calls: Captured[] = [];
+    const options = {
+      fetchImpl: capturingFetch(calls),
+      lookupImpl: lookupImpl(["93.184.216.34"]),
+    };
+
+    await fetchSafeResponse("https://example.com/", options);
+    await fetchSafeResponse("https://example.com/", {
+      ...options,
+      headers: { "User-Agent": "custom/1.0" },
+    });
+
+    expect(new Headers(calls[0].init.headers).get("user-agent")).toBe(USER_AGENT);
+    expect(new Headers(calls[1].init.headers).get("user-agent")).toBe("custom/1.0");
   });
 
   test("verifies certificates against the hostname, not the pinned IP", () => {
