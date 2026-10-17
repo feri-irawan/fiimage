@@ -1,0 +1,111 @@
+<style>
+  /* Spine: the site's host runs up a book spine on the left, and the title
+     sits on the page in a large serif. */
+  * {
+    font-family: "Instrument Sans", "Inter", sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    color: #0e1430;
+  }
+
+  .canvas {
+    width: 600px;
+    height: 315px;
+    overflow: hidden;
+    display: flex;
+    background: #f5f6f8;
+  }
+
+  .spine {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    background: #2135c4;
+  }
+
+  #host {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #ffffff;
+    white-space: nowrap;
+    transform: rotate(-90deg);
+  }
+
+  .page {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 30px 40px 28px 38px;
+  }
+
+  .story {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    gap: 12px;
+  }
+
+  #title {
+    display: block;
+    font-family: "Instrument Serif", "Inter", serif;
+    font-size: 46px;
+    font-weight: 400;
+    line-height: 1.02;
+    letter-spacing: -0.5px;
+    line-clamp: 3;
+  }
+
+  #description {
+    display: block;
+    font-family: "Instrument Serif", "Inter", serif;
+    font-style: italic;
+    font-size: 19px;
+    line-height: 1.25;
+    color: #4a5170;
+    line-clamp: 2;
+  }
+
+  .footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    object-fit: cover;
+  }
+
+  #url {
+    font-size: 12px;
+    color: #4a5170;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 440px;
+  }
+</style>
+
+<body>
+  <div class="canvas">
+    <div class="spine">
+      <p id="host">fiimage.vercel.app</p>
+    </div>
+    <div class="page">
+      <div class="story">
+        <h1 id="title">Lorem ipsum dolor sit amet consectetur adipisicing elit</h1>
+        <p id="description">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      </div>
+      <div class="footer">
+        <img id="icon" width="20" height="20" src="https://dummyimage.com/150x150/000/fff" />
+        <p id="url">https://fiimage.vercel.app</p>
+      </div>
+    </div>
+  </div>
+</body>

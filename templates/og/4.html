@@ -1,0 +1,137 @@
+<style>
+  /* Browser: the page in a browser window, with its address in the address
+     bar. The window runs off the bottom edge. */
+  * {
+    font-family: "Instrument Sans", "Inter", sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    color: #10131a;
+  }
+
+  .canvas {
+    width: 600px;
+    height: 315px;
+    overflow: hidden;
+    display: flex;
+    padding: 30px 34px 0;
+    background: #c9d2df;
+  }
+
+  .window {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background: #ffffff;
+    border-radius: 12px 12px 0 0;
+    border: 1px solid #aeb8c7;
+    border-bottom: 0;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    background: #eef1f5;
+    border-radius: 12px 12px 0 0;
+    border-bottom: 1px solid #dde2ea;
+  }
+
+  .lights {
+    display: flex;
+    gap: 6px;
+  }
+
+  .light {
+    display: flex;
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+  }
+
+  .address {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    padding: 5px 12px;
+    background: #ffffff;
+    border-radius: 7px;
+    font-size: 12px;
+  }
+
+  #icon {
+    width: 15px;
+    height: 15px;
+    border-radius: 3px;
+    object-fit: cover;
+  }
+
+  .where {
+    display: flex;
+    max-width: 400px;
+    overflow: hidden;
+  }
+
+  #host {
+    white-space: nowrap;
+  }
+
+  #path {
+    color: #6b7281;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  .page {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    flex: 1;
+    padding: 0 34px;
+  }
+
+  #title {
+    display: block;
+    font-size: 33px;
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.8px;
+    line-clamp: 3;
+  }
+
+  #description {
+    display: block;
+    color: #4b5263;
+    font-size: 16px;
+    line-height: 1.4;
+    line-clamp: 2;
+  }
+</style>
+
+<body>
+  <div class="canvas">
+    <div class="window">
+      <div class="bar">
+        <div class="lights">
+          <div class="light" style="background: #ff5f57"></div>
+          <div class="light" style="background: #febc2e"></div>
+          <div class="light" style="background: #28c840"></div>
+        </div>
+        <div class="address">
+          <img id="icon" width="15" height="15" src="https://dummyimage.com/150x150/000/fff" />
+          <div class="where">
+            <span id="host">fiimage.vercel.app</span>
+            <span id="path">/og</span>
+          </div>
+        </div>
+      </div>
+      <div class="page">
+        <h1 id="title">Lorem ipsum dolor sit amet consectetur adipisicing elit</h1>
+        <p id="description">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      </div>
+    </div>
+  </div>
+</body>

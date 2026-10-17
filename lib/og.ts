@@ -6,6 +6,7 @@ import { load } from "cheerio";
 import { Request, Response } from "express";
 import { readFileSync } from "fs";
 import { resolve } from "path";
+import { domainToUnicode } from "url";
 import parse from "html-react-parser";
 import { z } from "zod";
 import inlineCss from "inline-css";
@@ -59,7 +60,9 @@ export const createOGImage = async (req: Request, res: Response) => {
 /**
  * Query string Validation
  */
-const templateSchema = z.enum(["0", "1", "2", "3"]).default("0");
+const templateSchema = z
+  .enum(["0", "1", "2", "3", "4", "5", "6", "7"])
+  .default("0");
 const querySchema = z.object({
   url: httpUrlSchema,
   template: templateSchema,
@@ -72,19 +75,25 @@ const MAX_TITLE_LENGTH = 200;
 const MAX_DESCRIPTION_LENGTH = 500;
 const OG_TIMEOUT_MS = 50_000;
 const templateCache = new Map<string, string>();
+const loadFont = (
+  file: string,
+  name: string,
+  weight: 400 | 700,
+  style: "normal" | "italic" = "normal"
+) => ({ name, data: readFileSync(resolve(`fonts/${file}`)), weight, style });
+
 const fonts = [
-  {
-    name: "Inter",
-    data: readFileSync(resolve("fonts/inter-regular.otf")),
-    weight: 400 as const,
-    style: "normal" as const,
-  },
-  {
-    name: "Inter",
-    data: readFileSync(resolve("fonts/inter-bold.otf")),
-    weight: 700 as const,
-    style: "normal" as const,
-  },
+  loadFont("instrument-sans-regular.ttf", "Instrument Sans", 400),
+  loadFont("instrument-sans-bold.ttf", "Instrument Sans", 700),
+  loadFont("instrument-sans-condensed-bold.ttf", "Instrument Sans Condensed", 700),
+  loadFont("instrument-serif-regular.ttf", "Instrument Serif", 400),
+  loadFont("instrument-serif-italic.ttf", "Instrument Serif", 400, "italic"),
+  loadFont("jetbrains-mono-regular.ttf", "JetBrains Mono", 400),
+  loadFont("jetbrains-mono-bold.ttf", "JetBrains Mono", 700),
+  // Templates fall back to Inter for scripts the faces above lack, such as
+  // Cyrillic and Greek.
+  loadFont("inter-regular.otf", "Inter", 400),
+  loadFont("inter-bold.otf", "Inter", 700),
 ];
 
 /** Load Satori after its CJS compression dependency is available. */
@@ -162,6 +171,28 @@ const formatDisplayUrl = (url: string) => {
   displayUrl.hash = "";
   const text = displayUrl.toString();
   return displayUrl.pathname === "/" ? text.slice(0, -1) : text;
+};
+
+/**
+ * Split a page URL into the readable host and path that templates show
+ * separately, such as `github.com` and `/feri-irawan/fiimage`.
+ */
+export const getAddressParts = (url = "") => {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return { host: "", path: "" };
+  }
+
+  let path = parsed.pathname.replace(/\/$/, "");
+  try {
+    path = decodeURI(path);
+  } catch {
+    // Keep a malformed escape as it is.
+  }
+  const host = domainToUnicode(parsed.hostname) || parsed.hostname;
+  return { host: host.replace(/^www\./, ""), path };
 };
 
 /** Extract the title, description, and icon candidates from a page. */
@@ -328,7 +359,10 @@ export const renderOGImage = async (
   template: z.infer<typeof templateSchema> = "0",
   deadlineAt = Date.now() + OG_TIMEOUT_MS
 ) => {
-  const htmlObject = parse(await useTheTemplate(metadata, template));
+  // Drop whitespace-only text between tags, which Satori would draw as spaces.
+  const htmlObject = parse(await useTheTemplate(metadata, template), {
+    trim: true,
+  });
   const svg = await withDeadline(
     createSVGFromHTMLObject(htmlObject),
     deadlineAt,
@@ -368,6 +402,10 @@ const useTheTemplate = async (
   $("#title").text(metadata.title);
   $("#description").text(metadata.description || "");
   $("#url").text(metadata.url || "");
+
+  const { host, path } = getAddressParts(metadata.url);
+  $("#host").text(host);
+  $("#path").text(path);
 
   if (!metadata.icon) $("#icon").remove();
   else $("#icon").attr("src", metadata.icon);
