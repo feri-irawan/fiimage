@@ -104,11 +104,14 @@ describe("waiting for a page to settle", () => {
     "waits for content that scripts fetch after load",
     async () => {
       await withPage(
+        // The request starts right after load; /late answers 800 ms later.
+        // Starting it later would race the 500 ms network-idle window on a
+        // busy machine instead of testing the wait.
         `<script>
-          addEventListener("load", () => setTimeout(() =>
+          addEventListener("load", () =>
             fetch("/late").then((r) => r.text()).then((text) => {
               document.body.dataset.late = text;
-            }), 300));
+            }));
         </script>`,
         async (page, origin) => {
           await page.goto(origin, { waitUntil: "load" });
