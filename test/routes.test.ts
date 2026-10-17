@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { Request, Response } from "express";
 import { capture } from "../lib/capture";
-import { createOGImage } from "../lib/og";
+import { createOGImage, isFiimageFetch } from "../lib/og";
 import { generateThumbnail } from "../lib/thumbnail";
 import { generationGate } from "../lib/concurrency";
 
@@ -74,6 +74,12 @@ describe("route contracts", () => {
 
     expect(result.statusCode).toBe(400);
     expect(result.payload).toHaveProperty("fieldErrors");
+  });
+
+  // A plain object, like the Node request Vercel passes, which has no req.get().
+  test("OG recognizes its own requests from the raw headers", () => {
+    expect(isFiimageFetch({ headers: { "x-fiimage-fetch": "1" } } as unknown as Request)).toBe(true);
+    expect(isFiimageFetch({ headers: {} } as unknown as Request)).toBe(false);
   });
 
   test("OG rejects an image that is not an HTTP(S) URL with 400", async () => {

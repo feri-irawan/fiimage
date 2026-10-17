@@ -38,7 +38,7 @@ export const createOGImage = async (req: Request, res: Response) => {
       const deadlineAt = Date.now() + OG_TIMEOUT_MS;
       // When a page's icon or photo points back at this service, the nested
       // request skips images so the two cannot keep requesting each other.
-      const nested = Boolean(req.get(FIIMAGE_FETCH_HEADER));
+      const nested = isFiimageFetch(req);
       const metadata = await getPageMetadata(query.url, deadlineAt, fetch, {
         withIcon: !nested,
         withPhoto: !nested && PHOTO_TEMPLATES.has(query.template),
@@ -81,6 +81,13 @@ const querySchema = z.object({
 const PHOTO_TEMPLATES = new Set<string>(["8"]);
 /** Sent with icon and photo requests, so fiimage can tell when it is fetching itself. */
 export const FIIMAGE_FETCH_HEADER = "x-fiimage-fetch";
+
+/**
+ * True when fiimage itself sent this request. Reads the raw headers because
+ * Vercel passes a plain Node request, without Express's `req.get()`.
+ */
+export const isFiimageFetch = (req: Pick<Request, "headers">) =>
+  Boolean(req.headers[FIIMAGE_FETCH_HEADER]);
 
 const MAX_HTML_BYTES = 2 * 1024 * 1024;
 const MAX_ICON_BYTES = 512 * 1024;
