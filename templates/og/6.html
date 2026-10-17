@@ -1,0 +1,103 @@
+<style>
+  /* Cover: a magazine cover with the site's host as the masthead and the
+     title as the cover line, in a large serif on ultramarine. */
+  * {
+    font-family: "Instrument Sans", "Inter", sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    color: #ffffff;
+  }
+
+  .canvas {
+    width: 600px;
+    height: 315px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 26px 40px 28px;
+    background: #2135c4;
+  }
+
+  .masthead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-shrink: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  }
+
+  #host {
+    font-family: "Instrument Serif", "Inter", serif;
+    font-size: 26px;
+    line-height: 1;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 440px;
+  }
+
+  #icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 13px;
+    object-fit: cover;
+  }
+
+  .story {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  #title {
+    display: block;
+    font-family: "Instrument Serif", "Inter", serif;
+    font-size: 42px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.5px;
+    line-clamp: 3;
+  }
+
+  #description {
+    display: block;
+    font-family: "Instrument Serif", "Inter", serif;
+    font-style: italic;
+    font-size: 18px;
+    line-height: 1.25;
+    color: rgba(255, 255, 255, 0.78);
+    line-clamp: 2;
+  }
+
+  #url {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+</style>
+
+<body>
+  <div class="canvas">
+    <div class="masthead">
+      <p id="host">fiimage.vercel.app</p>
+      <img id="icon" width="26" height="26" src="https://dummyimage.com/150x150/000/fff" />
+    </div>
+    <div class="story">
+      <h1 id="title">Lorem ipsum dolor sit amet consectetur adipisicing elit</h1>
+      <p id="description">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+    </div>
+    <p id="url">https://fiimage.vercel.app</p>
+  </div>
+</body>

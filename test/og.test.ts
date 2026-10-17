@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   decodeHtml,
+  getAddressParts,
   getPageMetadata,
   parsePageMetadata,
   renderOGImage,
@@ -157,18 +158,28 @@ describe("page metadata fetching", () => {
   });
 });
 
+describe("page address parts", () => {
+  test.each([
+    ["https://www.github.com/feri-irawan/fiimage/", "github.com", "/feri-irawan/fiimage"],
+    ["https://example.com", "example.com", ""],
+    ["https://xn--bcher-kva.example/caf%C3%A9", "bücher.example", "/café"],
+    ["https://example.com/bad%E0%A4%A", "example.com", "/bad%E0%A4%A"],
+    ["not a url", "", ""],
+  ])("splits %s", (url, host, path) => {
+    expect(getAddressParts(url)).toEqual({ host, path });
+  });
+});
+
 describe("Open Graph rendering", () => {
   const icon = `data:image/png;base64,${Buffer.from(png).toString("base64")}`;
+  const templates = ["0", "1", "2", "3", "4", "5", "6", "7"] as const;
 
-  test.each([
-    ["0", undefined],
-    ["1", undefined],
-    ["1", icon],
-    ["2", undefined],
-    ["2", icon],
-    ["3", undefined],
-    ["3", icon],
-  ] as const)("renders template %s (icon: %p) as a 1200x630 PNG", async (template, iconUrl) => {
+  test.each(
+    templates.flatMap((template) => [
+      [template, undefined],
+      [template, icon],
+    ])
+  )("renders template %s (icon: %p) as a 1200x630 PNG", async (template, iconUrl) => {
     const output = await renderOGImage(
       {
         title: "Café crème: a fairly long title that should wrap onto two lines",

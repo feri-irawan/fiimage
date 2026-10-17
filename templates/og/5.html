@@ -1,0 +1,106 @@
+<style>
+  /* Bold: a hard-edged white card with a solid offset shadow on yellow. */
+  * {
+    font-family: "Instrument Sans", "Inter", sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    color: #0a0a0a;
+  }
+
+  .canvas {
+    width: 600px;
+    height: 315px;
+    overflow: hidden;
+    display: flex;
+    padding: 28px 34px 34px 28px;
+    background: #fde047;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+    padding: 26px 30px;
+    background: #ffffff;
+    border: 3px solid #0a0a0a;
+    border-radius: 16px;
+    box-shadow: 8px 8px 0 #0a0a0a;
+  }
+
+  .copy {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    gap: 10px;
+  }
+
+  #title {
+    display: block;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.8px;
+    line-clamp: 3;
+  }
+
+  #description {
+    display: block;
+    color: #404040;
+    font-size: 15px;
+    line-height: 1.4;
+    line-clamp: 2;
+  }
+
+  .footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 2px solid #0a0a0a;
+    object-fit: cover;
+  }
+
+  .where {
+    display: flex;
+    font-size: 15px;
+    max-width: 440px;
+    overflow: hidden;
+  }
+
+  #host {
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  #path {
+    color: #525252;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+</style>
+
+<body>
+  <div class="canvas">
+    <div class="card">
+      <div class="copy">
+        <h1 id="title">Lorem ipsum dolor sit amet consectetur adipisicing elit</h1>
+        <p id="description">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      </div>
+      <div class="footer">
+        <img id="icon" width="30" height="30" src="https://dummyimage.com/150x150/000/fff" />
+        <div class="where">
+          <span id="host">fiimage.vercel.app</span>
+          <span id="path">/og</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>

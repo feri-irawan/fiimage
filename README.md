@@ -180,7 +180,7 @@ The query strings are:
 | Name                  | Description                                                                                   |
 | --------------------- | --------------------------------------------------------------------------------------------- |
 | `url`                 | Your web URL (must start with `https://` or `http://`)                                        |
-| `template` (optional) | The template: `0` (default), `1`, `2`, or `3`. See [the templates](#templates) below          |
+| `template` (optional) | The template, from `0` (default) to `7`. See [the templates](#templates) below                |
 
 The image content is read from your page:
 
@@ -194,28 +194,47 @@ The image content is read from your page:
 Example:
 
 ```
-https://fiimage.vercel.app/og?url=https://github.com/feri-irawan/fiimage
+https://fiimage.vercel.app/og?template=6&url=https://github.com/feri-irawan/fiimage
 ```
-
-Output:
-
-![Open Graph Image](https://fiimage.vercel.app/og?url=https://github.com/feri-irawan/fiimage)
 
 ### Templates
 
-`0` (default): light and centered, as in the example above
+Each image below is this repository's page, rendered live with `template=N`. Without `template`, `0` is used.
 
-`1`: light, with the icon beside the title
-
-![Open Graph Image, template 1](https://fiimage.vercel.app/og?template=1&url=https://github.com/feri-irawan/fiimage)
-
-`2`: dark, with an accent bar
-
-![Open Graph Image, template 2](https://fiimage.vercel.app/og?template=2&url=https://github.com/feri-irawan/fiimage)
-
-`3`: a white card on a gradient
-
-![Open Graph Image, template 3](https://fiimage.vercel.app/og?template=3&url=https://github.com/feri-irawan/fiimage)
+<table>
+  <tr>
+    <td width="50%"><img src="https://fiimage.vercel.app/og?url=https://github.com/feri-irawan/fiimage" alt="Template 0, Clean"></td>
+    <td width="50%"><img src="https://fiimage.vercel.app/og?template=1&amp;url=https://github.com/feri-irawan/fiimage" alt="Template 1, Split"></td>
+  </tr>
+  <tr>
+    <td align="center"><code>0</code> Clean (default)</td>
+    <td align="center"><code>1</code> Split</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="https://fiimage.vercel.app/og?template=2&amp;url=https://github.com/feri-irawan/fiimage" alt="Template 2, Terminal"></td>
+    <td width="50%"><img src="https://fiimage.vercel.app/og?template=3&amp;url=https://github.com/feri-irawan/fiimage" alt="Template 3, Poster"></td>
+  </tr>
+  <tr>
+    <td align="center"><code>2</code> Terminal</td>
+    <td align="center"><code>3</code> Poster</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="https://fiimage.vercel.app/og?template=4&amp;url=https://github.com/feri-irawan/fiimage" alt="Template 4, Browser"></td>
+    <td width="50%"><img src="https://fiimage.vercel.app/og?template=5&amp;url=https://github.com/feri-irawan/fiimage" alt="Template 5, Bold"></td>
+  </tr>
+  <tr>
+    <td align="center"><code>4</code> Browser</td>
+    <td align="center"><code>5</code> Bold</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="https://fiimage.vercel.app/og?template=6&amp;url=https://github.com/feri-irawan/fiimage" alt="Template 6, Cover"></td>
+    <td width="50%"><img src="https://fiimage.vercel.app/og?template=7&amp;url=https://github.com/feri-irawan/fiimage" alt="Template 7, Spine"></td>
+  </tr>
+  <tr>
+    <td align="center"><code>6</code> Cover</td>
+    <td align="center"><code>7</code> Spine</td>
+  </tr>
+</table>
 
 ## Contribution
 
