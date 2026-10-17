@@ -72,19 +72,11 @@ type ReadResponseBodyOptions = {
   timeoutMs?: number;
 };
 
-/**
- * Identifies fiimage to the sites it fetches from. Some, such as Wikimedia,
- * ask automated clients for this and may block generic library agents.
- */
-export const USER_AGENT = "fiimage (+https://github.com/feri-irawan/fiimage)";
-
 /** Fetch a public URL while validating every redirect target. */
 export const fetchSafeResponse = async (
   startUrl: string,
   { headers, timeoutMs = 30_000, fetchImpl = fetch, lookupImpl }: FetchSafeOptions = {}
 ) => {
-  const requestHeaders = new Headers(headers);
-  if (!requestHeaders.has("user-agent")) requestHeaders.set("User-Agent", USER_AGENT);
   let currentUrl = startUrl;
   const deadline = Date.now() + timeoutMs;
 
@@ -109,7 +101,7 @@ export const fetchSafeResponse = async (
       const [input, init] = createPinnedRequest(
         currentUrl,
         addresses[attempt % addresses.length],
-        requestHeaders
+        headers
       );
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), attemptTimeoutMs);
