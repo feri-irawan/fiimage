@@ -131,10 +131,13 @@ Capture a public web page as a PNG image. The `s` parameter controls the browser
 
 The query strings are:
 
-| Name           | Description                                      |
-| -------------- | ------------------------------------------------ |
-| `url`          | The web page URL                                 |
-| `s` (optional) | The viewport size, for example `s=1280x720`      |
+| Name                  | Description                                                                               |
+| --------------------- | ----------------------------------------------------------------------------------------- |
+| `url`                 | The web page URL                                                                          |
+| `s` (optional)        | The viewport size, for example `s=1280x720`                                               |
+| `fullPage` (optional) | Capture the whole page instead of only the viewport: `fullPage=1`. Up to 4096 pixels high |
+| `delay` (optional)    | Extra time to wait before capturing, in milliseconds: `delay=2000`. Up to `10000`         |
+| `dark` (optional)     | Ask the page for its dark mode (`prefers-color-scheme: dark`): `dark=1`                   |
 
 Example:
 
@@ -145,6 +148,20 @@ https://fiimage.vercel.app/capture?s=1280x720&url=https://example.com
 Output:
 
 ![Captured example.com web page](https://fiimage.vercel.app/capture?s=1280x720&url=https://example.com)
+
+### Full Page, Delay, and Dark Mode
+
+- `fullPage=1` scrolls through the page first so lazy-loaded images appear, then captures its whole height, up to 4096 pixels.
+- `delay=2000` waits two more seconds after the page has loaded, for animations or content that appears late.
+- `dark=1` captures sites that support dark mode in their dark theme.
+
+They can be combined:
+
+```
+https://fiimage.vercel.app/capture?s=1280x720&fullPage=1&dark=1&url=https://nodejs.org/en
+```
+
+Very long or image-heavy full pages can exceed the 4 MB response limit; a smaller `s` width helps.
 
 ## Create an Open Graph Image (og:image)
 
