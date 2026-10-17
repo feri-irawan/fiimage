@@ -164,6 +164,10 @@ describe("Open Graph rendering", () => {
     ["0", undefined],
     ["1", undefined],
     ["1", icon],
+    ["2", undefined],
+    ["2", icon],
+    ["3", undefined],
+    ["3", icon],
   ] as const)("renders template %s (icon: %p) as a 1200x630 PNG", async (template, iconUrl) => {
     const output = await renderOGImage(
       {
