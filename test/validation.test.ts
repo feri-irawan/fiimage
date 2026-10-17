@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   captureDelaySchema,
+  captureFormatSchema,
   captureSizeSchema,
   darkSchema,
   fullPageSchema,
@@ -106,5 +107,12 @@ describe("query validation", () => {
     for (const value of ["10001", "-1", "1.5", "abc"]) {
       expect(captureDelaySchema.safeParse(value).success).toBe(false);
     }
+  });
+
+  test("defaults capture output to PNG and accepts the other formats", () => {
+    expect(captureFormatSchema.parse(undefined)).toBe("png");
+    expect(captureFormatSchema.parse("jpg")).toBe("jpeg");
+    expect(captureFormatSchema.parse("webp")).toBe("webp");
+    expect(captureFormatSchema.safeParse("gif").success).toBe(false);
   });
 });

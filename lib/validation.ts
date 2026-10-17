@@ -100,11 +100,24 @@ export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
 
 const invalidFormat = { error: "`f` invalid." };
 
+export const OUTPUT_CONTENT_TYPES: Record<OutputFormat, string> = {
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
+
 /** Output format; `jpg` is accepted as an alias for `jpeg`. */
-export const outputFormatSchema = z
-  .enum([...OUTPUT_FORMATS, "jpg"], invalidFormat)
-  .default("jpeg")
-  .transform((format): OutputFormat => (format === "jpg" ? "jpeg" : format));
+const formatSchema = (defaultFormat: OutputFormat) =>
+  z
+    .enum([...OUTPUT_FORMATS, "jpg"], invalidFormat)
+    .default(defaultFormat)
+    .transform((format): OutputFormat => (format === "jpg" ? "jpeg" : format));
+
+/** Format for resized images and video thumbnails; JPEG by default. */
+export const outputFormatSchema = formatSchema("jpeg");
+
+/** Format for page captures; PNG by default. */
+export const captureFormatSchema = formatSchema("png");
 
 const invalidQuality = { error: "`q` invalid." };
 
