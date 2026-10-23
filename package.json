@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "scripts": {
     "dev": "bun x --bun vercel@59.16.0 dev",
     "test": "bun test",
@@ -24,7 +24,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@types/bun": "1.4.2",
+    "@types/bun": "1.4.4",
     "@types/express": "^5.0.6",
     "@types/inline-css": "^3.0.4",
     "@types/node": "^26.5.1",
