@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",
-    "@sparticuz/chromium": "^153.0.0",
+    "@sparticuz/chromium": "^158.0.0",
     "cheerio": "^1.2.0",
     "express": "^5.2.1",
     "fflate": "0.7.3",
